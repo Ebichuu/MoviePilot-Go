@@ -53,7 +53,9 @@ func normalizeMediaIndexCompletionPlan(plan mediaindex.CompletionPlan) (mediaind
 	plan.RequiredServer.Name = strings.TrimSpace(plan.RequiredServer.Name)
 	plan.RequiredServer.Type = strings.ToLower(strings.TrimSpace(plan.RequiredServer.Type))
 	plan.RequiredServer.Fingerprint = strings.TrimSpace(plan.RequiredServer.Fingerprint)
-	if plan.RequiredServer.Name == "" || plan.RequiredServer.Type != "emby" || len(plan.RequiredServer.Name) > 255 ||
+	if plan.RequiredServer.Name == "" ||
+		(plan.RequiredServer.Type != "emby" && plan.RequiredServer.Type != "jellyfin") ||
+		len(plan.RequiredServer.Name) > 255 ||
 		!validOrganizationSHA256(plan.RequiredServer.Fingerprint) {
 		return mediaindex.CompletionPlan{}, uuid.Nil, mediaindex.ErrInvalidRequest
 	}

@@ -19,7 +19,7 @@ func TestNormalizeMediaIndexCompletionPlan(t *testing.T) {
 		mutate func(*mediaindex.CompletionPlan)
 	}{
 		{name: "invalid server id", mutate: func(plan *mediaindex.CompletionPlan) { plan.RequiredServer.ID = "invalid" }},
-		{name: "unsupported server", mutate: func(plan *mediaindex.CompletionPlan) { plan.RequiredServer.Type = "jellyfin" }},
+		{name: "unsupported server", mutate: func(plan *mediaindex.CompletionPlan) { plan.RequiredServer.Type = "plex" }},
 		{name: "empty server fingerprint", mutate: func(plan *mediaindex.CompletionPlan) { plan.RequiredServer.Fingerprint = "" }},
 		{name: "invalid server fingerprint", mutate: func(plan *mediaindex.CompletionPlan) { plan.RequiredServer.Fingerprint = strings.Repeat("A", 64) }},
 		{name: "empty files", mutate: func(plan *mediaindex.CompletionPlan) { plan.Files = nil }},

@@ -10,8 +10,9 @@ import (
 	"time"
 )
 
-// Client is a bounded, strongly typed Emby HTTP client.
+// Client is a bounded, strongly typed Emby/Jellyfin HTTP client.
 type Client struct {
+	serverType    string
 	baseURL       *url.URL
 	playHost      *url.URL
 	token         string
@@ -52,7 +53,16 @@ func NewClient(config Config) (*Client, error) {
 		return nil, newError(ErrorCodeInvalidConfig, 0, nil)
 	}
 
+	serverType := strings.ToLower(strings.TrimSpace(config.ServerType))
+	if serverType == "" {
+		serverType = "emby"
+	}
+	if serverType != "emby" && serverType != "jellyfin" {
+		return nil, newError(ErrorCodeInvalidConfig, 0, nil)
+	}
+
 	client := &Client{
+		serverType:    serverType,
 		baseURL:       baseURL,
 		playHost:      playHost,
 		token:         token,

@@ -202,15 +202,19 @@ func (c *Client) RefreshAll(ctx context.Context) error {
 	return c.postRefresh(ctx, c.endpoint("/Library/Refresh"))
 }
 
-// PlayURL returns the Emby web client item URL while preserving PlayHost's
-// configured base path.
+// PlayURL returns the Emby or Jellyfin web client item URL while preserving
+// PlayHost's configured base path.
 func (c *Client) PlayURL(itemID string) (string, error) {
 	itemID = strings.TrimSpace(itemID)
 	if c == nil || c.playHost == nil || itemID == "" || len(itemID) > 4096 || strings.ContainsAny(itemID, "\r\n") {
 		return "", newError(ErrorCodeInvalidArgument, 0, nil)
 	}
 	fragmentQuery := url.Values{"id": {itemID}}.Encode()
-	return strings.TrimRight(c.playHost.String(), "/") + "/web/index.html#!/item?" + fragmentQuery, nil
+	route := "/web/index.html#!/item?"
+	if c.serverType == "jellyfin" {
+		route = "/web/index.html#!/details?"
+	}
+	return strings.TrimRight(c.playHost.String(), "/") + route + fragmentQuery, nil
 }
 
 func (c *Client) getJSON(ctx context.Context, endpoint string, maxBodyBytes int64, target any) error {

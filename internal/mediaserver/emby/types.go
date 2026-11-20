@@ -106,8 +106,9 @@ func (e *Error) Is(target error) bool {
 	return e != nil && e.Code == ErrorCodeOutcomeUnknown && target == ErrOutcomeUnknown
 }
 
-// Config configures an Emby client.
+// Config configures an Emby or Jellyfin client.
 type Config struct {
+	ServerType    string
 	BaseURL       string
 	PlayHost      string
 	Token         string

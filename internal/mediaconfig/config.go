@@ -114,12 +114,16 @@ func Normalize(servers []Server) (Snapshot, bool, error) {
 
 	snapshot := Snapshot{Servers: normalized}
 	for _, server := range normalized {
-		if server.Enabled && server.Type == "emby" {
+		if server.Enabled && isSupportedServerType(server.Type) {
 			snapshot.RequiredID = server.ID
 			break
 		}
 	}
 	return snapshot, changed, nil
+}
+
+func isSupportedServerType(serverType string) bool {
+	return serverType == "emby" || serverType == "jellyfin"
 }
 
 func normalizeServer(server *Server, seenIDs, seenNames map[string]struct{}) (bool, error) {
@@ -128,8 +132,8 @@ func normalizeServer(server *Server, seenIDs, seenNames map[string]struct{}) (bo
 		return false, err
 	}
 	serverType := strings.ToLower(strings.TrimSpace(server.Type))
-	if serverType != "emby" {
-		return false, invalid("媒体服务器类型仅支持 emby")
+	if !isSupportedServerType(serverType) {
+		return false, invalid("媒体服务器类型仅支持 emby、jellyfin")
 	}
 	if server.Type != serverType {
 		server.Type = serverType

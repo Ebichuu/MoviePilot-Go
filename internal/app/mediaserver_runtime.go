@@ -99,17 +99,21 @@ func buildMediaServerRuntime(
 		if !setting.Enabled {
 			continue
 		}
-		if setting.Type != "emby" {
+		if setting.Type != "emby" && setting.Type != "jellyfin" {
 			return nil, errors.New("媒体服务器类型当前不受支持")
 		}
 		client, err := emby.NewClient(emby.Config{
+			ServerType:    setting.Type,
 			BaseURL:       setting.Config.Host,
 			PlayHost:      setting.Config.PlayHost,
 			Token:         setting.Config.APIKey,
-			Authorization: embyAuthorization(setting.ID),
+			Authorization: mediaServerAuthorization(setting.Type, setting.ID, setting.Config.APIKey),
 			Timeout:       timeout,
 		})
 		if err != nil {
+			if setting.Type == "jellyfin" {
+				return nil, errors.New("Jellyfin 运行时配置无效")
+			}
 			return nil, errors.New("Emby 运行时配置无效")
 		}
 		entry := &mediaServerEntry{
@@ -453,6 +457,13 @@ func translateEmbyError(err error) error {
 
 func embyAuthorization(deviceID string) string {
 	return fmt.Sprintf(`Emby Client="MoviePilot-Go", Device="MoviePilot-Go", DeviceId="%s", Version="0.1"`, deviceID)
+}
+
+func mediaServerAuthorization(serverType, deviceID, token string) string {
+	if strings.EqualFold(strings.TrimSpace(serverType), "jellyfin") {
+		return fmt.Sprintf(`MediaBrowser Token="%s", Client="MoviePilot-Go", Device="MoviePilot-Go", DeviceId="%s", Version="0.1"`, token, deviceID)
+	}
+	return embyAuthorization(deviceID)
 }
 
 func tmdbProviderID(id int64) string {
