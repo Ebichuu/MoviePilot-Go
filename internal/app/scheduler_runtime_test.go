@@ -1,48 +1,65 @@
 package app
 
 import (
-	"errors"
+	"context"
 	"testing"
+	"time"
 
-	"github.com/moviepilot-go/moviepilot-go/internal/jobs"
+	"github.com/moviepilot-go/moviepilot-go/internal/httpapi"
 )
 
-func TestNewSchedulerRuntimeRequiresManager(t *testing.T) {
-	t.Parallel()
-
-	if got := newSchedulerRuntime(nil); got != nil {
-		t.Fatalf("nil manager = %#v", got)
-	}
-	manager := &jobs.Manager{}
-	runtime := newSchedulerRuntime(manager)
-	if runtime == nil || runtime.jobs != manager {
-		t.Fatalf("runtime = %#v", runtime)
-	}
+type fakeCookieCloudSyncer struct {
+	called int
 }
 
-func TestSchedulerRuntimeRunScheduler(t *testing.T) {
+func (f *fakeCookieCloudSyncer) SyncCookieCloud(_ context.Context) (string, error) {
+	f.called++
+	return "synced", nil
+}
+
+type fakeDirMonitorRunner struct {
+	triggered int
+}
+
+func (f *fakeDirMonitorRunner) TriggerScan(_ context.Context) error {
+	f.triggered++
+	return nil
+}
+
+func (f *fakeDirMonitorRunner) ScheduleInfo(_ time.Time, _ *time.Location) (httpapi.ScheduleInfo, bool) {
+	return httpapi.ScheduleInfo{
+		ID:       "directory_monitor",
+		Name:     "目录监控整理",
+		Provider: "系统",
+		Status:   "等待",
+		NextRun:  "1分钟后",
+	}, true
+}
+
+func TestSchedulerRuntimeListAndRun(t *testing.T) {
 	t.Parallel()
 
-	var nilRuntime *schedulerRuntime
-	if ok, err := nilRuntime.RunScheduler(t.Context(), "probe"); ok || err != nil {
-		t.Fatalf("nil runtime = (%t, %v)", ok, err)
-	}
-	if ok, err := (&schedulerRuntime{}).RunScheduler(t.Context(), "probe"); ok || err != nil {
-		t.Fatalf("缺 jobs = (%t, %v)", ok, err)
+	cc := &fakeCookieCloudSyncer{}
+	dm := &fakeDirMonitorRunner{}
+	runtime := newSchedulerRuntime(nil, cc, nil, dm, time.UTC)
+
+	schedules := runtime.ListSchedules(context.Background())
+	if len(schedules) != 1 || schedules[0].ID != "directory_monitor" {
+		t.Fatalf("ListSchedules() = %+v", schedules)
 	}
 
-	runtime := newSchedulerRuntime(&jobs.Manager{})
-	// 未映射的 jobid 一律 (false, nil)：HTTP 层据此回「后台服务不存在」，
-	// 不能假装触发成功。
-	for _, jobID := range []string{"", "   ", "unknown", "PROBE", "organization-sweep"} {
-		if ok, err := runtime.RunScheduler(t.Context(), jobID); ok || err != nil {
-			t.Fatalf("jobid=%q = (%t, %v)", jobID, ok, err)
-		}
+	ok, err := runtime.RunScheduler(context.Background(), "cookiecloud")
+	if err != nil || !ok || cc.called != 1 {
+		t.Fatalf("cookiecloud run ok=%v err=%v called=%d", ok, err, cc.called)
 	}
 
-	// 已映射的 jobid：下游没接好时如实返回错误，而不是报「不存在」。
-	if ok, err := runtime.RunScheduler(t.Context(), " organize "); ok ||
-		!errors.Is(err, jobs.ErrOrganizationSweepHandlerUnavailable) {
-		t.Fatalf("organize = (%t, %v)", ok, err)
+	ok, err = runtime.RunScheduler(context.Background(), "directory_monitor")
+	if err != nil || !ok || dm.triggered != 1 {
+		t.Fatalf("directory_monitor run ok=%v err=%v triggered=%d", ok, err, dm.triggered)
+	}
+
+	ok, err = runtime.RunScheduler(context.Background(), "unknown_job_xyz")
+	if err != nil || ok {
+		t.Fatalf("unknown job ok=%v err=%v, want false, nil", ok, err)
 	}
 }

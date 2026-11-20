@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -12,7 +13,9 @@ import (
 type OrganizationFileRecord struct {
 	SourcePath string
 	TargetPath string
+	Mode       string
 	State      string
+	LastError  string
 	UpdatedAt  time.Time
 }
 
@@ -26,7 +29,7 @@ func (s *Store) ListManualOrganizationHistory(ctx context.Context, limit int) ([
 		limit = 50
 	}
 	rows, err := s.db.Pool.Query(ctx, `
-		SELECT source_path, target_path, state, updated_at
+		SELECT source_path, target_path, mode, state, last_error, updated_at
 		FROM organization_files
 		ORDER BY id DESC
 		LIMIT $1`, limit)
@@ -36,7 +39,7 @@ func (s *Store) ListManualOrganizationHistory(ctx context.Context, limit int) ([
 	defer rows.Close()
 	for rows.Next() {
 		var record OrganizationFileRecord
-		if scanErr := rows.Scan(&record.SourcePath, &record.TargetPath, &record.State, &record.UpdatedAt); scanErr != nil {
+		if scanErr := rows.Scan(&record.SourcePath, &record.TargetPath, &record.Mode, &record.State, &record.LastError, &record.UpdatedAt); scanErr != nil {
 			return nil, scanErr
 		}
 		records = append(records, record)
@@ -44,14 +47,17 @@ func (s *Store) ListManualOrganizationHistory(ctx context.Context, limit int) ([
 	return records, rows.Err()
 }
 
-// RecordManualOrganization 把一次手动整理的结果写进整理链（单文件批次）。
+// RecordManualOrganization 把一次手动整理的结果写进整理链（单文件批次，默认 move）。
 func (s *Store) RecordManualOrganization(ctx context.Context, source, target string) error {
+	return s.RecordManualOrganizationWithMode(ctx, source, target, "move")
+}
+
+// RecordManualOrganizationWithMode 把一次手动/目录监控整理成功的结果落库。
+func (s *Store) RecordManualOrganizationWithMode(ctx context.Context, source, target, mode string) error {
 	if s == nil || s.db == nil || s.db.Pool == nil {
 		return nil
 	}
-	// organization_files.batch_id 是 organization_batches 的外键，直接写随机 UUID
-	// 会违反 batch_id_fkey（历史记录永远落不了库）。手动整理先建一个已完成的
-	// 单文件批次，再把文件挂上去。
+	mode = normalizeOrganizationHistoryMode(mode)
 	tx, err := s.db.Pool.Begin(ctx)
 	if err != nil {
 		return err
@@ -64,16 +70,72 @@ func (s *Store) RecordManualOrganization(ctx context.Context, source, target str
 		) VALUES (
 			$1, NULL, 'completed', $2, $3,
 			jsonb_build_array(jsonb_build_object(
-				'source_path', $4::text, 'target_path', $5::text, 'mode', 'move'
+				'source_path', $4::text, 'target_path', $5::text, 'mode', $6::text
 			)),
 			'', now()
-		)`, batchID, filepath.Dir(source), filepath.Dir(target), source, target); err != nil {
+		)`, batchID, filepath.Dir(source), filepath.Dir(target), source, target, mode); err != nil {
 		return err
 	}
 	if _, err := tx.Exec(ctx, `
 		INSERT INTO organization_files (batch_id, source_path, target_path, state, ordinal, mode, completed_at)
-		VALUES ($1, $2, $3, 'completed', 0, 'move', now())`, batchID, source, target); err != nil {
+		VALUES ($1, $2, $3, 'completed', 0, $4, now())`, batchID, source, target, mode); err != nil {
 		return err
 	}
 	return tx.Commit(ctx)
+}
+
+// RecordFailedOrganization 把一次手动/目录监控整理的失败原因落库到 organization_files，
+// 使失败记录可在 Web 端「整理历史 → 失败」中查看与排查。
+func (s *Store) RecordFailedOrganization(ctx context.Context, source, target, mode, errMsg string) error {
+	if s == nil || s.db == nil || s.db.Pool == nil {
+		return nil
+	}
+	mode = normalizeOrganizationHistoryMode(mode)
+	errMsg = strings.TrimSpace(errMsg)
+	if errMsg == "" {
+		errMsg = "整理失败"
+	}
+	if len(errMsg) > 2000 {
+		errMsg = errMsg[:2000]
+	}
+	if target == "" {
+		target = source
+	}
+	tx, err := s.db.Pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback(context.Background()) }()
+	batchID := uuid.New()
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO organization_batches (
+			id, intent_id, state, source_root, target_root, plan, last_error, completed_at
+		) VALUES (
+			$1, NULL, 'failed', $2, $3,
+			jsonb_build_array(jsonb_build_object(
+				'source_path', $4::text, 'target_path', $5::text, 'mode', $6::text
+			)),
+			$7, NULL
+		)`, batchID, filepath.Dir(source), filepath.Dir(target), source, target, mode, errMsg); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO organization_files (batch_id, source_path, target_path, state, ordinal, mode, last_error, completed_at)
+		VALUES ($1, $2, $3, 'terminal_failed', 0, $4, $5, now())`, batchID, source, target, mode, errMsg); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
+}
+
+func normalizeOrganizationHistoryMode(mode string) string {
+	switch strings.ToLower(strings.TrimSpace(mode)) {
+	case "copy":
+		return "copy"
+	case "hardlink", "link":
+		return "hardlink"
+	case "symlink", "softlink":
+		return "symlink"
+	default:
+		return "move"
+	}
 }

@@ -43,11 +43,14 @@ type PreparedPlan struct {
 }
 
 type localRule struct {
-	downloadRoot string
-	libraryRoot  string
-	mode         organizer.Mode
-	priority     int
-	needNotify   bool
+	downloadRoot          string
+	libraryRoot           string
+	mode                  organizer.Mode
+	priority              int
+	needNotify            bool
+	renaming              bool
+	libraryTypeFolder     bool
+	libraryCategoryFolder bool
 }
 
 // BuildPlan maps the downloader's exact selected and completed file snapshot
@@ -58,6 +61,19 @@ func BuildPlan(
 	content downloader.TaskContent,
 	directories []downloadconfig.Directory,
 	successInput organization.SuccessInput,
+) (PreparedPlan, error) {
+	return BuildPlanWithTemplates(ctx, content, directories, successInput, organization.NamingTemplates{})
+}
+
+// BuildPlanWithTemplates 在 BuildPlan 基础上支持 V2 自定义 Jinja2 命名模板：
+// 当目录规则启用 renaming 或配置了自定义模板时，对视频文件按模板渲染目标相对路径，
+// 并按需拼接二级类型/分类目录；模板渲染失败时自动回退到原始相对路径。
+func BuildPlanWithTemplates(
+	ctx context.Context,
+	content downloader.TaskContent,
+	directories []downloadconfig.Directory,
+	successInput organization.SuccessInput,
+	templates organization.NamingTemplates,
 ) (PreparedPlan, error) {
 	if ctx == nil {
 		return PreparedPlan{}, ErrInvalidOrganizationContent
@@ -105,6 +121,8 @@ func BuildPlan(
 		contentInfo.IsDir(),
 		content.Files,
 		rule,
+		normalizedInput,
+		templates,
 	)
 	if err != nil {
 		return PreparedPlan{}, err
@@ -189,12 +207,18 @@ func selectLocalRule(contentPath string, directories []downloadconfig.Directory)
 		if directory.Notify != nil {
 			needNotify = *directory.Notify
 		}
+		renaming := directory.Renaming != nil && *directory.Renaming
+		libraryTypeFolder := directory.LibraryTypeFolder != nil && *directory.LibraryTypeFolder
+		libraryCategoryFolder := directory.LibraryCategoryFolder != nil && *directory.LibraryCategoryFolder
 		rules = append(rules, localRule{
-			downloadRoot: downloadRoot,
-			libraryRoot:  libraryRoot,
-			mode:         mode,
-			priority:     priority,
-			needNotify:   needNotify,
+			downloadRoot:          downloadRoot,
+			libraryRoot:           libraryRoot,
+			mode:                  mode,
+			priority:              priority,
+			needNotify:            needNotify,
+			renaming:              renaming,
+			libraryTypeFolder:     libraryTypeFolder,
+			libraryCategoryFolder: libraryCategoryFolder,
 		})
 	}
 	if len(rules) == 0 {
@@ -222,6 +246,8 @@ func buildOperations(
 	contentIsDirectory bool,
 	files []downloader.TaskContentFile,
 	rule localRule,
+	successInput organization.SuccessInput,
+	templates organization.NamingTemplates,
 ) ([]organizer.Operation, error) {
 	type plannedFile struct {
 		relative string
@@ -289,6 +315,12 @@ func buildOperations(
 				return nil, ErrInvalidOrganizationContent
 			}
 			targetRelative = filepath.Join(targetRelative, relativeToContent)
+		}
+		hasCustomTemplate := strings.TrimSpace(templates.Movie) != "" || strings.TrimSpace(templates.TV) != ""
+		if (rule.renaming || hasCustomTemplate) && organization.IsVideoFilename(source) {
+			if rendered, renderErr := renderPlannedTargetRelative(source, successInput, rule, templates); renderErr == nil && rendered != "" {
+				targetRelative = filepath.FromSlash(rendered)
+			}
 		}
 		target := filepath.Clean(filepath.Join(rule.libraryRoot, targetRelative))
 		if len(target) > maxPlanPathLen || !pathWithinRoot(rule.libraryRoot, target) {
@@ -401,4 +433,57 @@ func pathDepth(value string) int {
 		return r == '/' || r == '\\'
 	})
 	return len(parts)
+}
+
+func renderPlannedTargetRelative(
+	source string,
+	successInput organization.SuccessInput,
+	rule localRule,
+	templates organization.NamingTemplates,
+) (string, error) {
+	title, year := splitPlanTitleYear(successInput.Media.TitleYear)
+	tmdbID := ""
+	if strings.EqualFold(strings.TrimSpace(successInput.Media.Source), "themoviedb") {
+		tmdbID = strings.TrimSpace(successInput.Media.MediaID)
+	}
+	rel, err := organization.RenderRelativeTarget(organization.NamingInput{
+		SourcePath: source,
+		MediaType:  successInput.Media.MediaType,
+		Title:      title,
+		Year:       year,
+		Category:   successInput.Media.Category,
+		TMDBID:     tmdbID,
+	}, templates)
+	if err != nil {
+		return "", err
+	}
+	prefix := make([]string, 0, 2)
+	if rule.libraryTypeFolder && strings.TrimSpace(successInput.Media.MediaType) != "" {
+		prefix = append(prefix, strings.TrimSpace(successInput.Media.MediaType))
+	}
+	if rule.libraryCategoryFolder && strings.TrimSpace(successInput.Media.Category) != "" {
+		prefix = append(prefix, strings.TrimSpace(successInput.Media.Category))
+	}
+	if len(prefix) > 0 {
+		rel = path.Join(append(prefix, rel)...)
+	}
+	return rel, nil
+}
+
+func splitPlanTitleYear(value string) (string, string) {
+	value = strings.TrimSpace(value)
+	open := strings.LastIndex(value, "(")
+	if open < 0 || !strings.HasSuffix(value, ")") {
+		return value, ""
+	}
+	year := strings.TrimSpace(value[open+1 : len(value)-1])
+	if len(year) != 4 {
+		return value, ""
+	}
+	for _, r := range year {
+		if r < '0' || r > '9' {
+			return value, ""
+		}
+	}
+	return strings.TrimSpace(value[:open]), year
 }

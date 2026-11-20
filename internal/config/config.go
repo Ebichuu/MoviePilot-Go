@@ -114,6 +114,8 @@ type Config struct {
 
 	SubscribeRSSInterval time.Duration
 	SiteMessage          bool
+	MovieRenameFormat    string
+	TVRenameFormat       string
 
 	CookieCloudHost        string
 	CookieCloudKey         string
@@ -230,6 +232,8 @@ func Load() (Config, error) {
 
 		SubscribeRSSInterval: defaultSubscribeRSS,
 		SiteMessage:          parseBoolDefault(lookup("SITE_MESSAGE", "MOVIEPILOT_SITE_MESSAGE"), false),
+		MovieRenameFormat:    lookup("MOVIE_RENAME_FORMAT", "MOVIEPILOT_MOVIE_RENAME_FORMAT"),
+		TVRenameFormat:       lookup("TV_RENAME_FORMAT", "MOVIEPILOT_TV_RENAME_FORMAT"),
 
 		CookieCloudHost:        defaultString(lookup("COOKIECLOUD_HOST"), defaultCookieCloudHost),
 		CookieCloudKey:         lookup("COOKIECLOUD_KEY"),

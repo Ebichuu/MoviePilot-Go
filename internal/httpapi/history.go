@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"net/http"
+	"path"
 	"sort"
 	"strconv"
 	"strings"
@@ -9,8 +10,7 @@ import (
 	"github.com/moviepilot-go/moviepilot-go/internal/database"
 )
 
-// transferHistoryItem 是 V2 `schemas.TransferHistory` 的子集。只填充本仓库真实拥有的
-// 字段（标题、类型、季集、时间、来源），其余保持 null，不让前端把猜测值当事实展示。
+// transferHistoryItem 对应 V2 `schemas.TransferHistory`，覆盖成功与失败整理记录。
 type transferHistoryItem struct {
 	ID          int     `json:"id"`
 	Src         *string `json:"src"`
@@ -27,54 +27,75 @@ type transferHistoryItem struct {
 	Episodes    string  `json:"episodes"`
 	Image       string  `json:"image"`
 	Status      bool    `json:"status"`
+	ErrMsg      *string `json:"errmsg"`
 	Date        string  `json:"date"`
 	Username    string  `json:"username"`
 }
 
-// transferHistory 对应 V2 `GET /history/transfer`：数据来自组织成功快照
-// （`organization_success_snapshots`），只包含成功记录，因此 status=false 时为空。
+// transferHistory 对应 V2 `GET /history/transfer`：合并成功快照与失败整理记录，
+// 支持 `status=true/false` 与 `title=成功/失败/关键词` 筛选。
 func (d Dependencies) transferHistory(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	page := parseHistoryInt(query.Get("page"), 1, 1, 1000)
 	count := parseHistoryInt(query.Get("count"), 30, 1, 200)
 	title := strings.TrimSpace(query.Get("title"))
+	var statusFilter *bool
 	if title == "成功" {
 		title = ""
+		ok := true
+		statusFilter = &ok
 	} else if title == "失败" {
-		writeSuccess(w, map[string]any{"list": []transferHistoryItem{}, "total": 0})
-		return
+		title = ""
+		ok := false
+		statusFilter = &ok
 	}
 	if raw := strings.TrimSpace(query.Get("status")); raw != "" {
-		if wanted, err := strconv.ParseBool(raw); err == nil && !wanted {
-			writeSuccess(w, map[string]any{"list": []transferHistoryItem{}, "total": 0})
-			return
+		if wanted, err := strconv.ParseBool(raw); err == nil {
+			statusFilter = &wanted
 		}
 	}
 	if d.Store == nil {
 		writeSuccess(w, map[string]any{"list": []transferHistoryItem{}, "total": 0})
 		return
 	}
-	entries, err := d.Store.ListTransferHistory(r.Context(), "", title, count, (page-1)*count)
+	filter := database.TransferHistoryFilter{
+		Title:  title,
+		Status: statusFilter,
+		Limit:  count,
+		Offset: (page - 1) * count,
+	}
+	entries, err := d.Store.ListTransferHistoryFiltered(r.Context(), filter)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "查询整理记录失败")
 		return
 	}
-	total, err := d.Store.CountTransferHistory(r.Context(), "", title)
+	total, err := d.Store.CountTransferHistoryFiltered(r.Context(), filter)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "查询整理记录失败")
 		return
 	}
 	items := make([]transferHistoryItem, 0, len(entries))
 	for index, entry := range entries {
-		items = append(items, newTransferHistoryItem(entry, (page-1)*count+index+1))
+		id := (page-1)*count + index + 1
+		if entry.Failed && entry.FileID > 0 {
+			id = int(entry.FileID)
+		}
+		items = append(items, newTransferHistoryItem(entry, id))
 	}
 	writeSuccess(w, map[string]any{"list": items, "total": total})
 }
 
 func newTransferHistoryItem(entry database.TransferHistoryEntry, id int) transferHistoryItem {
-	title, year := splitTitleYear(entry.TitleYear)
+	rawTitle := entry.TitleYear
+	if entry.Failed && rawTitle == entry.SourcePath && entry.SourcePath != "" {
+		rawTitle = path.Base(strings.ReplaceAll(entry.SourcePath, `\`, "/"))
+	}
+	title, year := splitTitleYear(rawTitle)
 	item := transferHistoryItem{
 		ID:          id,
+		Src:         nullableNonEmptyString(entry.SourcePath),
+		Dest:        nullableNonEmptyString(entry.TargetPath),
+		Mode:        nullableNonEmptyString(entry.Mode),
 		Type:        entry.MediaType,
 		Category:    entry.Category,
 		Title:       title,
@@ -84,7 +105,8 @@ func newTransferHistoryItem(entry database.TransferHistoryEntry, id int) transfe
 		Seasons:     transferHistorySeasons(entry),
 		Episodes:    transferHistoryEpisodes(entry),
 		Image:       entry.PosterURL,
-		Status:      true,
+		Status:      !entry.Failed,
+		ErrMsg:      nullableNonEmptyString(entry.ErrMsg),
 		Date:        entry.CreatedAt.Format("2006-01-02 15:04:05"),
 		Username:    entry.Username,
 	}
@@ -94,6 +116,14 @@ func newTransferHistoryItem(entry database.TransferHistoryEntry, id int) transfe
 		}
 	}
 	return item
+}
+
+func nullableNonEmptyString(value string) *string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return nil
+	}
+	return &value
 }
 
 // splitTitleYear 把 `沙丘 (2021)` 拆成标题与年份；没有年份后缀时原样返回。
@@ -164,7 +194,11 @@ func pad2(value int) string {
 }
 
 func parseHistoryInt(raw string, fallback, min, max int) int {
-	value, err := strconv.Atoi(strings.TrimSpace(raw))
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return fallback
+	}
+	value, err := strconv.Atoi(raw)
 	if err != nil {
 		return fallback
 	}
@@ -178,7 +212,7 @@ func parseHistoryInt(raw string, fallback, min, max int) int {
 }
 
 // emptyTransferHistory 对应 V2 `GET /history/empty/transfer`。V2 会 truncate 整理历史表，
-// 而本项目的整理历史直接来自 organization_success_snapshots —— 这些快照是整理流程的幂等
+// 而本项目的整理成功历史直接来自 organization_success_snapshots —— 这些快照是整理流程的幂等
 // 事实，清空会导致已整理文件被重复整理，因此这里明确拒绝而不是照搬删除。
 func emptyTransferHistory(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, Response{
@@ -186,8 +220,29 @@ func emptyTransferHistory(w http.ResponseWriter, _ *http.Request) {
 	})
 }
 
-// deleteTransferHistory 对应 V2 `DELETE /history/transfer`，拒绝理由同上。
-func deleteTransferHistory(w http.ResponseWriter, _ *http.Request) {
+// deleteTransferHistory 保留无依赖降级入口（供最小测试直接调用）。
+func deleteTransferHistory(w http.ResponseWriter, r *http.Request) {
+	(Dependencies{}).deleteTransferHistory(w, r)
+}
+
+// deleteTransferHistory 对应 V2 `DELETE /history/transfer`：
+// 允许删除失败的整理文件记录（?id=<file_id>），同时继续保护不可删除的成功幂等快照。
+func (d Dependencies) deleteTransferHistory(w http.ResponseWriter, r *http.Request) {
+	if d.Store != nil {
+		if rawID := strings.TrimSpace(r.URL.Query().Get("id")); rawID != "" {
+			if fileID, err := strconv.ParseInt(rawID, 10, 64); err == nil && fileID > 0 {
+				deleted, delErr := d.Store.DeleteFailedTransferHistory(r.Context(), fileID)
+				if delErr != nil {
+					writeError(w, http.StatusInternalServerError, "删除整理失败记录失败")
+					return
+				}
+				if deleted {
+					writeSuccess(w, map[string]any{"deleted": fileID})
+					return
+				}
+			}
+		}
+	}
 	writeJSON(w, http.StatusOK, Response{
 		Success: false, Message: "整理记录来自组织成功快照（幂等事实），不支持删除单条记录",
 	})

@@ -137,6 +137,10 @@ func NewAdapterFromConfig(client *HTTPClient, id int, name, baseURL, adapter str
 		return NewHaidanAdapter(client, id, name, baseURL, rawConfig)
 	case "hddolby", "hddolbyspider":
 		return NewHDDolbyAdapter(client, id, name, baseURL, rawConfig)
+	case "nexusphp", "nexusphpspider", "nexus":
+		return NewNexusPHPAdapter(client, id, name, baseURL, rawConfig)
+	case "torznab", "jackett", "prowlarr":
+		return NewTorznabAdapter(client, id, name, baseURL, rawConfig)
 	case "html", "goquery", "declarative-html":
 		definition.Format = "html"
 	case "rss", "gofeed", "declarative-rss":

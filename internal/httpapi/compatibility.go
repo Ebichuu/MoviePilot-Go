@@ -38,16 +38,17 @@ func (d Dependencies) registerPublicCompatibility(router chi.Router) {
 	router.With(d.requireAPIToken).Get("/dashboard/statistic2", d.dashboardStatistic)
 	router.With(d.requireAPIToken).Get("/dashboard/storage2", d.dashboardStorage)
 	router.With(d.requireAPIToken).Get("/dashboard/network2", d.dashboardNetwork)
-	router.With(d.requireAPIToken).Get("/dashboard/schedule2", dashboardSchedule)
+	router.With(d.requireAPIToken).Get("/dashboard/schedule2", d.dashboardSchedule)
 	router.With(d.requireAPIToken).Get("/dashboard/schedule2/{job_id}/progress", dashboardScheduleProgress)
 	router.With(d.requireAPIToken).Get("/system/runscheduler2", d.systemRunScheduler)
 	router.With(d.requireAPIToken).Get("/subscribe/list", d.listAllSubscriptions)
 	// 识别接口的 API_TOKEN 版本与登录版本共用同一处理逻辑。
 	router.With(d.requireAPIToken).Get("/media/recognize2", d.recognizeMedia)
 	router.With(d.requireAPIToken).Get("/media/recognize_file2", d.mediaRecognizeFile)
-	// 图片代理用资源令牌鉴权：<img> 无法带 Authorization 头，前端把令牌放在查询参数里。
+	// 图片代理与实时日志用资源令牌或 Bearer 鉴权：<img> 与 EventSource 无法带 Authorization 头。
 	router.With(authenticateResource(d.Auth)).Get("/system/img/*", d.systemImageProxy)
 	router.With(authenticateResource(d.Auth)).Get("/system/cache/image", d.systemCacheImage)
+	router.With(d.authenticateLoggingSuperuser).Get("/system/logging", d.systemLogging)
 }
 
 func (d Dependencies) registerProtectedCompatibility(router chi.Router) {
@@ -78,7 +79,7 @@ func (d Dependencies) registerProtectedCompatibility(router chi.Router) {
 	router.With(d.requireAdmin).Delete("/plugin/folders/{folder_name}", d.deletePluginFolder)
 	router.With(d.requireAdmin).Put("/plugin/folders/{folder_name}/plugins", d.updateFolderPlugins)
 	// 仪表盘：真实数据来自本机（/proc）、本机下载器与本地同步缓存。
-	router.With(d.requireAdmin).Get("/dashboard/schedule", dashboardSchedule)
+	router.With(d.requireAdmin).Get("/dashboard/schedule", d.dashboardSchedule)
 	router.With(d.requireAdmin).Get("/dashboard/cpu", d.dashboardCPUUsage)
 	router.With(d.requireAdmin).Get("/dashboard/memory", d.dashboardMemoryInfo)
 	router.With(d.requireAdmin).Get("/dashboard/downloader", d.dashboardDownloaderInfo)
@@ -239,12 +240,11 @@ func (d Dependencies) registerProtectedCompatibility(router chi.Router) {
 	router.Post("/webhook/", webhookReceive)
 	router.Post("/download/subtitle", downloadSubtitle)
 	router.Post("/auth/exchange", authExchange)
-	router.With(d.requireAdmin).Get("/system/logging", systemLogging)
-	router.With(d.requireAdmin).Get("/system/logging/download/{name}", systemLoggingDownload)
+	router.With(d.requireAdmin).Get("/system/logging/download/{name}", d.systemLoggingDownload)
 	router.With(d.requireAdmin).Post("/history/transfer/ai-redo", transferAIRedo)
 	router.With(d.requireAdmin).Post("/history/transfer/{history_id}/ai-redo", transferAIHistoryRedo)
 	router.With(d.requireAdmin).Get("/history/empty/transfer", emptyTransferHistory)
-	router.With(d.requireAdmin).Delete("/history/transfer", deleteTransferHistory)
+	router.With(d.requireAdmin).Delete("/history/transfer", d.deleteTransferHistory)
 	router.Delete("/history/download", deleteDownloadHistory)
 	router.Get("/system/setting/public/{key}", d.publicSetting)
 	router.Get("/system/global/user", d.systemGlobalUser)

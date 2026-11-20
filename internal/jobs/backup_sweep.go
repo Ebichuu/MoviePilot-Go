@@ -244,6 +244,7 @@ func (m *Manager) SetBackupSweepInterval(interval time.Duration) error {
 	}
 	m.backupPeriodicJobs.Remove(m.backupPeriodicHandle)
 	m.backupPeriodicHandle = newHandle
+	m.backupPeriodicInterval = normalizeBackupSweepInterval(interval)
 	return nil
 }
 

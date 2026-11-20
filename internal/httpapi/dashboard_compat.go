@@ -23,8 +23,19 @@ var publicSystemConfigKeys = map[string]struct{}{
 }
 
 // dashboardSchedule 对应 V2 `GET /dashboard/schedule`（List[ScheduleInfo]）。
-// River 的周期任务还没有投影成 V2 形状，先返回空列表。
-func dashboardSchedule(w http.ResponseWriter, _ *http.Request) {
+func dashboardSchedule(w http.ResponseWriter, r *http.Request) {
+	(Dependencies{}).dashboardSchedule(w, r)
+}
+
+func (d Dependencies) dashboardSchedule(w http.ResponseWriter, r *http.Request) {
+	if lister, ok := d.Scheduler.(ScheduleLister); ok && lister != nil {
+		items := lister.ListSchedules(r.Context())
+		if items == nil {
+			items = []ScheduleInfo{}
+		}
+		writeJSON(w, http.StatusOK, items)
+		return
+	}
 	writeJSON(w, http.StatusOK, []any{})
 }
 

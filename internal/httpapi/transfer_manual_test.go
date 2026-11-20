@@ -153,11 +153,29 @@ func TestManualTransferHistoryAndTargetPath(t *testing.T) {
 		t.Fatalf("历史 = %s", recorder.Body.String())
 	}
 
-	// 目标路径计算未实现，明确拒绝而不是编造。
+	// 空请求体返回参数校验提示；合法参数用命名模板计算目标路径。
 	recorder = httptest.NewRecorder()
 	Dependencies{}.manualTransferTargetPath(recorder, httptest.NewRequest(http.MethodPost, "/transfer/manual/target-path", nil))
 	body := decodeResponseBody(t, recorder.Body.Bytes())
-	if body.Success || !strings.Contains(body.Message, "未配置命名模板") {
-		t.Fatalf("目标路径 = %+v", body)
+	if body.Success {
+		t.Fatalf("空请求体不应成功 = %+v", body)
+	}
+
+	recorder = httptest.NewRecorder()
+	req := manualTransferRequest(`{"source_path":"/downloads/Dune.2021.2160p.mkv","target_path":"/media/movies","media_type":"电影","title":"沙丘","year":"2021"}`)
+	Dependencies{}.manualTransferTargetPath(recorder, req)
+	var targetResp struct {
+		Success bool           `json:"success"`
+		Message string         `json:"message"`
+		Data    map[string]any `json:"data"`
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &targetResp); err != nil {
+		t.Fatalf("解析目标路径响应失败: %v", err)
+	}
+	if !targetResp.Success {
+		t.Fatalf("目标路径计算失败 = %+v", targetResp)
+	}
+	if got := targetResp.Data["target_path"]; got != "/media/movies/沙丘 (2021)/沙丘 (2021) - 2160p.mkv" {
+		t.Fatalf("target_path = %v", got)
 	}
 }

@@ -96,9 +96,31 @@ type Dependencies struct {
 	WebPush                     WebPushDispatcher
 	Storage                     storage.Provider
 	Scheduler                   SchedulerRunner
+	LogBuffer                   LogReader
 	// Plugins 是原生插件注册表；为 nil 表示本部署不启用插件体系，
 	// 此时插件路由返回空列表/明确失败，而不是 panic。
 	Plugins *pluginengine.Registry
+}
+
+// ScheduleInfo 对应 V2 `schemas.ScheduleInfo`（仪表盘后台服务列表项）。
+type ScheduleInfo struct {
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Provider string `json:"provider"`
+	Status   string `json:"status"`
+	NextRun  string `json:"next_run"`
+}
+
+// ScheduleLister 返回当前所有已注册的周期后台任务投影。
+type ScheduleLister interface {
+	ListSchedules(context.Context) []ScheduleInfo
+}
+
+// LogReader 是 Web 端实时日志查看与下载消费的内存日志缓冲契约。
+type LogReader interface {
+	Tail(n int) []string
+	All() []string
+	Subscribe(bufSize int) (<-chan string, func())
 }
 
 // SchedulerRunner 按 V2 的 jobid 立即触发一次后台服务；未注册的 jobid 返回 false。

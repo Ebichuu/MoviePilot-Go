@@ -53,9 +53,17 @@ type PlanningStore interface {
 // PlanningService confirms exact qBittorrent content, builds one immutable
 // local plan, persists it idempotently, and requests durable execution.
 type PlanningService struct {
-	store      PlanningStore
-	submitters downloadflow.SubmitterProvider
-	enqueuer   OrganizationEnqueuer
+	store             PlanningStore
+	submitters        downloadflow.SubmitterProvider
+	enqueuer          OrganizationEnqueuer
+	namingTemplatesFn func() organization.NamingTemplates
+}
+
+// SetNamingTemplatesProvider 注入自定义命名模板读取函数（热读取系统配置）。
+func (s *PlanningService) SetNamingTemplatesProvider(fn func() organization.NamingTemplates) {
+	if s != nil {
+		s.namingTemplatesFn = fn
+	}
 }
 
 // NewPlanningService creates the completed-download organization planner.
@@ -121,7 +129,11 @@ func (s *PlanningService) HandleDownloadCompleted(
 	if err != nil {
 		return err
 	}
-	prepared, err := BuildPlan(ctx, content, directories, successInput)
+	var templates organization.NamingTemplates
+	if s.namingTemplatesFn != nil {
+		templates = s.namingTemplatesFn()
+	}
+	prepared, err := BuildPlanWithTemplates(ctx, content, directories, successInput, templates)
 	if err != nil {
 		return err
 	}

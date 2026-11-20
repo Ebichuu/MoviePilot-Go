@@ -493,3 +493,19 @@ var _ httpapi.MediaServerClientSource = (*mediaServerRuntime)(nil)
 var _ httpapi.MediaServerPlaybackSource = (*mediaServerRuntime)(nil)
 var _ httpapi.MediaServerLibrarySource = (*mediaServerRuntime)(nil)
 var _ httpapi.RemoteMediaSource = (*mediaServerRuntime)(nil)
+
+// EnabledServerNames 返回所有当前已启用的媒体服务器名称（供调度器手动触发同步）。
+func (r *mediaServerRuntime) EnabledServerNames() []string {
+	if r == nil {
+		return nil
+	}
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	names := make([]string, 0, len(r.entries))
+	for _, entry := range r.entries {
+		if entry != nil && strings.TrimSpace(entry.setting.Name) != "" {
+			names = append(names, entry.setting.Name)
+		}
+	}
+	return names
+}

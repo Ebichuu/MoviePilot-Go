@@ -20,10 +20,12 @@ import (
 	"github.com/moviepilot-go/moviepilot-go/internal/httpapi"
 	"github.com/moviepilot-go/moviepilot-go/internal/indexer"
 	"github.com/moviepilot-go/moviepilot-go/internal/jobs"
+	"github.com/moviepilot-go/moviepilot-go/internal/logbuf"
 	"github.com/moviepilot-go/moviepilot-go/internal/mediaindex"
 	"github.com/moviepilot-go/moviepilot-go/internal/metadata"
 	"github.com/moviepilot-go/moviepilot-go/internal/notification"
 	"github.com/moviepilot-go/moviepilot-go/internal/notificationflow"
+	"github.com/moviepilot-go/moviepilot-go/internal/organization"
 	"github.com/moviepilot-go/moviepilot-go/internal/organizationflow"
 	"github.com/moviepilot-go/moviepilot-go/internal/scrapeflow"
 	"github.com/moviepilot-go/moviepilot-go/internal/scraper"
@@ -31,6 +33,13 @@ import (
 	"github.com/moviepilot-go/moviepilot-go/internal/storage"
 	"github.com/moviepilot-go/moviepilot-go/internal/subscriptionflow"
 )
+
+var defaultLogBuffer atomic.Pointer[logbuf.Buffer]
+
+// SetDefaultLogBuffer 注入进程级内存日志缓冲，供 /api/v1/system/logging 实时查看与下载。
+func SetDefaultLogBuffer(buf *logbuf.Buffer) {
+	defaultLogBuffer.Store(buf)
+}
 
 // Run 执行迁移、初始化依赖并运行单进程服务，直到上下文取消。
 func Run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
@@ -393,6 +402,23 @@ func Run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
 	if err != nil {
 		return fmt.Errorf("初始化整理规划服务: %w", err)
 	}
+	namingTemplatesFn := func() organization.NamingTemplates {
+		templates := organization.NamingTemplates{
+			Movie: cfg.MovieRenameFormat,
+			TV:    cfg.TVRenameFormat,
+		}
+		if settings := currentEnvironmentSettings.Load(); settings != nil {
+			movieFmt, tvFmt := settings.RenameFormats()
+			if movieFmt != "" {
+				templates.Movie = movieFmt
+			}
+			if tvFmt != "" {
+				templates.TV = tvFmt
+			}
+		}
+		return templates
+	}
+	organizationPlanner.SetNamingTemplatesProvider(namingTemplatesFn)
 	if err := downloadCompletionBinder.Bind(organizationPlanner); err != nil {
 		return fmt.Errorf("绑定下载完成处理器: %w", err)
 	}
@@ -526,8 +552,17 @@ func Run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
 	if err != nil {
 		return err
 	}
+	dirMonitor := newDirectoryMonitor(store, namingTemplatesFn, logger)
+	if dirMonitor != nil {
+		dirMonitor.Start(ctx)
+	}
+	var logReader httpapi.LogReader
+	if buf := defaultLogBuffer.Load(); buf != nil {
+		logReader = buf
+	}
 	handler := httpapi.NewRouter(httpapi.Dependencies{
 		Config: cfg, DB: db, Cache: redisCache, Store: store, Auth: authService, Logger: logger,
+		LogBuffer: logReader,
 		// 登录防爆破：账号与 IP 双维度锁定，阈值来自 MOVIEPILOT_LOGIN_* 配置。
 		LoginThrottle: httpapi.NewLoginThrottle(httpapi.LoginThrottleConfig{
 			MaxUserFailures: cfg.LoginMaxFailures,
@@ -557,7 +592,7 @@ func Run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
 		DownloaderSettings:  store, DownloadRequests: store, DownloadSubmissions: submissionService,
 		DownloadTasks: downloadRuntime, DownloadOwners: store,
 		Dashboard: newDashboardRuntime(store, downloadRuntime, time.Now()),
-		Scheduler: newSchedulerRuntime(jobManager),
+		Scheduler: newSchedulerRuntime(jobManager, cookieCloud, mediaServerRuntime, dirMonitor, cfg.Location),
 		Plugins:   pluginRegistry,
 		Sites:     store, SiteStatistics: store, SiteValidator: validateSite, BuildSiteAdapter: buildSiteAdapter, ReloadSites: siteReloader.Reload,
 		SiteCookieUpdater: siteflow.NewCookieUpdater(store, buildSiteAdapter),

@@ -2,6 +2,7 @@ package jobs
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"time"
 
@@ -103,4 +104,22 @@ func cleanupSweepPeriodicJob() *river.PeriodicJob {
 		},
 		&river.PeriodicJobOpts{ID: cleanupSweepPeriodicID},
 	)
+}
+
+// EnqueueCleanupSweep 立即插入一轮过期数据清理任务。
+func (m *Manager) EnqueueCleanupSweep(ctx context.Context) error {
+	if ctx == nil {
+		return errors.New("清理上下文无效")
+	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if m == nil || m.client == nil || !m.cleanupSweepEnabled {
+		return errors.New("数据清理任务未启用")
+	}
+	opts := river.InsertOpts{Queue: queueCleanupSweep, MaxAttempts: 3}
+	if _, err := m.client.Insert(ctx, CleanupSweepArgs{Cutoff: time.Now().UTC().Add(-cleanupSweepRetention)}, &opts); err != nil {
+		return err
+	}
+	return nil
 }

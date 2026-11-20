@@ -10,11 +10,15 @@ import (
 
 	"github.com/moviepilot-go/moviepilot-go/internal/app"
 	"github.com/moviepilot-go/moviepilot-go/internal/config"
+	"github.com/moviepilot-go/moviepilot-go/internal/logbuf"
 	"github.com/moviepilot-go/moviepilot-go/internal/version"
 )
 
 func main() {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	logBuffer := logbuf.New(2000)
+	app.SetDefaultLogBuffer(logBuffer)
+	baseHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo})
+	logger := slog.New(logbuf.NewHandler(baseHandler, logBuffer))
 	// 包内兜底日志（slog.Default()）与应用日志保持同一格式与输出。
 	slog.SetDefault(logger)
 	// `version` 不依赖配置：配置写错了也应该能查版本，所以放在加载配置之前。

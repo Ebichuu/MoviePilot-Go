@@ -175,6 +175,53 @@ func authenticateResource(service *auth.Service) func(http.Handler) http.Handler
 	}
 }
 
+// authenticateLoggingSuperuser 对齐 V2 `_verify_log_resource_superuser`：
+// 同时支持 Authorization Bearer（axios 纯文本模式）与资源 Cookie / ?token=（浏览器 EventSource），
+// 且强制校验超级管理员身份。
+func (d Dependencies) authenticateLoggingSuperuser(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if d.Auth == nil {
+			writeError(w, http.StatusUnauthorized, "Not authenticated")
+			return
+		}
+		var (
+			claims auth.Claims
+			err    error
+		)
+		header := strings.TrimSpace(r.Header.Get("Authorization"))
+		parts := strings.Fields(header)
+		if len(parts) == 2 && strings.EqualFold(parts[0], "Bearer") {
+			claims, err = d.Auth.VerifyAccessToken(parts[1])
+		} else if cookie, cookieErr := r.Cookie(resourceCookieName); cookieErr == nil && cookie.Value != "" {
+			claims, err = d.Auth.VerifyResourceToken(cookie.Value)
+		} else if queryToken := strings.TrimSpace(r.URL.Query().Get("token")); queryToken != "" {
+			claims, err = d.Auth.VerifyResourceToken(queryToken)
+			if err != nil {
+				claims, err = d.Auth.VerifyAccessToken(queryToken)
+			}
+		} else {
+			writeError(w, http.StatusUnauthorized, "Not authenticated")
+			return
+		}
+		if err != nil {
+			writeError(w, http.StatusForbidden, "token校验不通过")
+			return
+		}
+		rWithClaims := r.WithContext(context.WithValue(r.Context(), claimsContextKey, claims))
+		if d.Users != nil {
+			user, ok := d.authorizedUser(rWithClaims)
+			if !ok || !user.SuperUser {
+				writeError(w, http.StatusForbidden, "用户权限不足")
+				return
+			}
+		} else if !claims.SuperUser {
+			writeError(w, http.StatusForbidden, "用户权限不足")
+			return
+		}
+		next.ServeHTTP(w, rWithClaims)
+	})
+}
+
 // requireAPIToken 复刻 V2 `verify_apitoken`：`?token=` 必须等于配置的 API_TOKEN。
 // 没有配置 API_TOKEN 时一律拒绝——V2 用空串比较同样匹配不到任何令牌。
 func (d Dependencies) requireAPIToken(next http.Handler) http.Handler {

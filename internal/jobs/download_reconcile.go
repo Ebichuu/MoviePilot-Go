@@ -140,5 +140,27 @@ func downloadReconcilePeriodicArgs() (river.JobArgs, *river.InsertOpts) {
 	return args, &opts
 }
 
+// EnqueueDownloadReconcile 立即插入一轮下载状态对账任务。
+func (m *Manager) EnqueueDownloadReconcile(ctx context.Context) error {
+	if ctx == nil {
+		return ErrDownloadReconcileExecution
+	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if m == nil || m.client == nil || !m.downloadReconcileEnabled {
+		return ErrDownloadReconcileExecution
+	}
+	args := DownloadReconcileSweepArgs{Key: downloadReconcileKey, Cutoff: time.Now().UTC()}
+	opts := args.InsertOpts()
+	if _, err := m.client.Insert(ctx, args, &opts); err != nil {
+		if contextErr := ctx.Err(); contextErr != nil {
+			return contextErr
+		}
+		return ErrDownloadReconcileExecution
+	}
+	return nil
+}
+
 var _ river.JobArgsWithInsertOpts = DownloadReconcileSweepArgs{}
 var _ river.Worker[DownloadReconcileSweepArgs] = (*downloadReconcileWorker)(nil)

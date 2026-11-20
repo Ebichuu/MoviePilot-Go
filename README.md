@@ -25,14 +25,14 @@
 **已实现（主链路闭环）**
 
 - 订阅：电影/电视剧创建、编辑、重置、精准搜索、缺集与洗版、完成后状态收敛
-- 站点：8 个内置适配器（TNodeSpider、TorrentLeech、MTorrentSpider、SunnyPTSpider、YemaSpider、HaiDanSpider、HddolbySpider、RousiSpider），站点凭据用主密钥加密落库
+- 站点：8 个内置站点适配器 + 通用 **NexusPHP** 适配器 + **Torznab / Jackett / Prowlarr** 聚合协议，站点凭据用主密钥加密落库
 - 下载：qBittorrent / Transmission / rTorrent 提交、名称与大小接管、结果未知的幂等对账、进度查询
-- 整理：不可变计划 + 逐文件 CAS + SHA-256 校验，no-replace 发布，失败可安全重放
+- 整理：不可变计划 + 逐文件 CAS + SHA-256 校验，支持 V2 自定义 Jinja2 命名模板（`MOVIE_RENAME_FORMAT` / `TV_RENAME_FORMAT`）、本地目录监控（`monitor_type: "monitor"`）与失败历史记录查询/清理
 - 媒体库：Emby 入库确认、条目同步缓存、NFO 与图片刮削、刷新请求
 - 通知：Telegram（含入站 Bot）、Discord、飞书、Slack、SynologyChat、VoceChat、QQ、企业微信应用、WebPush，支持 V2 默认模板、逐目标重试与漏投恢复
 - 存储与扩展：本地存储、Rclone、Alist；5 个 Go 原生内置插件（站点签到、自动备份、RSS 增强、订阅助手、媒体库同步）；CookieCloud 同步；MFA/OTP
 - 元数据与发现：TMDB、豆瓣、Bangumi、AniList；发现/推荐页直接用这些来源
-- 运维：整库备份/恢复、`/healthz` 与 `/readyz`、结构化日志、登录防爆破
+- 运维：整库备份/恢复、River 周期任务投影到 `/dashboard/schedule` + `/system/runscheduler` 全量常用任务映射、Web 端内存实时日志查看/下载（`/system/logging` SSE）、`/healthz` 与 `/readyz`、结构化日志、登录防爆破
 - 迁移：从 V2 的 SQLite 单命令导入
 - 配置：`/api/v1/system/env` 在线修改并持久化到 `app.env`
 

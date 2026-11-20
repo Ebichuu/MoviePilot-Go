@@ -81,6 +81,12 @@ func NewEnvironmentSettings(
 	values["SUBSCRIBE_RSS_INTERVAL"] = rssMinutes
 	values["SITE_MESSAGE"] = cfg.SiteMessage
 	values["TZ"] = tz
+	if cfg.MovieRenameFormat != "" {
+		values["MOVIE_RENAME_FORMAT"] = cfg.MovieRenameFormat
+	}
+	if cfg.TVRenameFormat != "" {
+		values["TV_RENAME_FORMAT"] = cfg.TVRenameFormat
+	}
 	if cfg.CookieCloudHost != "" {
 		values["COOKIECLOUD_HOST"] = cfg.CookieCloudHost
 	}
@@ -150,6 +156,19 @@ func (s *EnvironmentSettings) NotificationSendTime() any {
 		return value
 	}
 	return nil
+}
+
+// RenameFormats 返回当前生效的自定义电影/剧集命名模板（留空表示使用默认模板）。
+func (s *EnvironmentSettings) RenameFormats() (movieFormat, tvFormat string) {
+	if s == nil {
+		return "", ""
+	}
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	movieFormat = strings.TrimSpace(formatEnvString(s.values["MOVIE_RENAME_FORMAT"]))
+	tvFormat = strings.TrimSpace(formatEnvString(s.values["TV_RENAME_FORMAT"]))
+	return movieFormat, tvFormat
 }
 
 // Update 校验并更新系统环境配置，并将变更持久化到 `CONFIG_DIR/app.env`。

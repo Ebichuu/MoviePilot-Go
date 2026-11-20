@@ -150,6 +150,7 @@ func (m *Manager) SetSiteSigninSweepInterval(interval time.Duration) error {
 	}
 	m.siteSigninPeriodicJobs.Remove(m.siteSigninPeriodicHandle)
 	m.siteSigninPeriodicHandle = newHandle
+	m.siteSigninPeriodicInterval = normalizeSiteSigninSweepInterval(interval)
 	return nil
 }
 

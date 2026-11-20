@@ -50,11 +50,14 @@ type periodicJobBundle interface {
 // Manager 管理 River 生命周期和唯一任务入队。
 type Manager struct {
 	client                     *river.Client[pgx.Tx]
+	startedAt                  time.Time
 	rssPeriodicJobs            periodicJobBundle
 	rssPeriodicMu              sync.Mutex
 	rssPeriodicHandle          rivertype.PeriodicJobHandle
 	rssPeriodicRegistered      bool
+	rssPeriodicInterval        time.Duration
 	downloadEnabled            bool
+	downloadReconcileEnabled   bool
 	organizationEnabled        bool
 	organizationSweepEnabled   bool
 	mediaIndexEnabled          bool
@@ -73,17 +76,20 @@ type Manager struct {
 	// 任务会在执行期才失败。
 	siteSigninSweepEnabled    bool
 	backupSweepEnabled        bool
+	cleanupSweepEnabled       bool
 	subscriptionSearchEnabled bool
 
 	// 签到与备份的周期任务走 bundle 注册（而非 river.Config.PeriodicJobs），
 	// 这样插件配置里的间隔可以热更新：AddSafely + Remove 换一个新周期，
 	// 不必重启 River 客户端。
-	siteSigninPeriodicJobs   periodicJobBundle
-	siteSigninPeriodicMu     sync.Mutex
-	siteSigninPeriodicHandle rivertype.PeriodicJobHandle
-	backupPeriodicJobs       periodicJobBundle
-	backupPeriodicMu         sync.Mutex
-	backupPeriodicHandle     rivertype.PeriodicJobHandle
+	siteSigninPeriodicJobs     periodicJobBundle
+	siteSigninPeriodicMu       sync.Mutex
+	siteSigninPeriodicHandle   rivertype.PeriodicJobHandle
+	siteSigninPeriodicInterval time.Duration
+	backupPeriodicJobs         periodicJobBundle
+	backupPeriodicMu           sync.Mutex
+	backupPeriodicHandle       rivertype.PeriodicJobHandle
+	backupPeriodicInterval     time.Duration
 
 	mediaServerPeriodicJobs    periodicJobBundle
 	mediaServerPeriodicMu      sync.Mutex
@@ -290,7 +296,9 @@ func NewManagerWithConfig(pool *pgxpool.Pool, logger *slog.Logger, config Manage
 	}
 	manager := &Manager{
 		client:                     client,
+		startedAt:                  time.Now().UTC(),
 		downloadEnabled:            downloadMaxWorkers > 0,
+		downloadReconcileEnabled:   downloadReconcileEnabled,
 		organizationEnabled:        organizationMaxWorkers > 0,
 		organizationSweepEnabled:   organizationSweepEnabled,
 		mediaIndexEnabled:          mediaIndexMaxWorkers > 0,
@@ -306,7 +314,11 @@ func NewManagerWithConfig(pool *pgxpool.Pool, logger *slog.Logger, config Manage
 		mediaServerSyncEnabled:     mediaServerSyncEnabled,
 		siteSigninSweepEnabled:     siteSigninSweepEnabled,
 		backupSweepEnabled:         backupSweepEnabled,
+		cleanupSweepEnabled:        cleanupSweepEnabled,
 		subscriptionSearchEnabled:  subscriptionSearchEnabled,
+		rssPeriodicInterval:        normalizeRSSSweepInterval(config.RSSSweepInterval),
+		siteSigninPeriodicInterval: siteSigninSweepInterval,
+		backupPeriodicInterval:     backupSweepInterval,
 	}
 	if rssSweepEnabled {
 		manager.rssPeriodicJobs = client.PeriodicJobs()
@@ -370,6 +382,7 @@ func (m *Manager) SetRSSSweepInterval(interval time.Duration) error {
 
 	m.rssPeriodicJobs.Remove(m.rssPeriodicHandle)
 	m.rssPeriodicHandle = newHandle
+	m.rssPeriodicInterval = normalizeRSSSweepInterval(interval)
 	return nil
 }
 
@@ -399,6 +412,7 @@ func (m *Manager) EnsureRSSSweepSchedule(interval time.Duration) error {
 	}
 	m.rssPeriodicHandle = handle
 	m.rssPeriodicRegistered = true
+	m.rssPeriodicInterval = normalizeRSSSweepInterval(interval)
 	return nil
 }
 
