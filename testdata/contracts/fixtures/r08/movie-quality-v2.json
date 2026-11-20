@@ -1,0 +1,328 @@
+{
+  "schema_version": 1,
+  "source": {
+    "path": "baselines\\2026-09-13\\official-v2\\app\\chain\\subscribe.py",
+    "sha256": "acb32d818b2cb8bf8dec3062e1b9155595b2045b8de08aa7db3005f6d48b0f95",
+    "movie_gate": [
+      1474,
+      1481
+    ],
+    "writer": [
+      1549,
+      1573
+    ],
+    "completion": [
+      470,
+      486
+    ]
+  },
+  "cases": [
+    {
+      "name": "normal movie records low quality",
+      "input": {
+        "best_version": false,
+        "current_priority": null,
+        "candidate_priority": 90,
+        "downloads": [
+          90
+        ]
+      },
+      "expected": {
+        "allowed": true,
+        "current_priority": 90,
+        "written_priority": 90,
+        "before_complete": false,
+        "complete": false
+      }
+    },
+    {
+      "name": "normal movie ignores upgrade threshold",
+      "input": {
+        "best_version": false,
+        "current_priority": 100,
+        "candidate_priority": 80,
+        "downloads": [
+          80
+        ]
+      },
+      "expected": {
+        "allowed": true,
+        "current_priority": 80,
+        "written_priority": 80,
+        "before_complete": false,
+        "complete": false
+      }
+    },
+    {
+      "name": "best unknown baseline allows zero",
+      "input": {
+        "best_version": true,
+        "current_priority": null,
+        "candidate_priority": 0,
+        "downloads": [
+          0
+        ]
+      },
+      "expected": {
+        "allowed": true,
+        "current_priority": 0,
+        "written_priority": 0,
+        "before_complete": false,
+        "complete": false
+      }
+    },
+    {
+      "name": "best zero baseline allows negative",
+      "input": {
+        "best_version": true,
+        "current_priority": 0,
+        "candidate_priority": -1,
+        "downloads": [
+          -1
+        ]
+      },
+      "expected": {
+        "allowed": true,
+        "current_priority": -1,
+        "written_priority": -1,
+        "before_complete": false,
+        "complete": false
+      }
+    },
+    {
+      "name": "lower quality rejected",
+      "input": {
+        "best_version": true,
+        "current_priority": 90,
+        "candidate_priority": 80,
+        "downloads": null
+      },
+      "expected": {
+        "allowed": false,
+        "current_priority": 90,
+        "written_priority": null,
+        "before_complete": false,
+        "complete": false
+      }
+    },
+    {
+      "name": "same quality rejected",
+      "input": {
+        "best_version": true,
+        "current_priority": 90,
+        "candidate_priority": 90,
+        "downloads": null
+      },
+      "expected": {
+        "allowed": false,
+        "current_priority": 90,
+        "written_priority": null,
+        "before_complete": false,
+        "complete": false
+      }
+    },
+    {
+      "name": "higher quality continues",
+      "input": {
+        "best_version": true,
+        "current_priority": 80,
+        "candidate_priority": 90,
+        "downloads": [
+          90
+        ]
+      },
+      "expected": {
+        "allowed": true,
+        "current_priority": 90,
+        "written_priority": 90,
+        "before_complete": false,
+        "complete": false
+      }
+    },
+    {
+      "name": "exact 100 completes",
+      "input": {
+        "best_version": true,
+        "current_priority": 90,
+        "candidate_priority": 100,
+        "downloads": [
+          100
+        ]
+      },
+      "expected": {
+        "allowed": true,
+        "current_priority": 100,
+        "written_priority": 100,
+        "before_complete": false,
+        "complete": true
+      }
+    },
+    {
+      "name": "priority above 100 does not complete",
+      "input": {
+        "best_version": true,
+        "current_priority": 90,
+        "candidate_priority": 101,
+        "downloads": [
+          101
+        ]
+      },
+      "expected": {
+        "allowed": true,
+        "current_priority": 101,
+        "written_priority": 101,
+        "before_complete": false,
+        "complete": false
+      }
+    },
+    {
+      "name": "negative nonzero threshold rejects lower",
+      "input": {
+        "best_version": true,
+        "current_priority": -5,
+        "candidate_priority": -6,
+        "downloads": null
+      },
+      "expected": {
+        "allowed": false,
+        "current_priority": -5,
+        "written_priority": null,
+        "before_complete": false,
+        "complete": false
+      }
+    },
+    {
+      "name": "negative nonzero threshold rejects equal",
+      "input": {
+        "best_version": true,
+        "current_priority": -5,
+        "candidate_priority": -5,
+        "downloads": null
+      },
+      "expected": {
+        "allowed": false,
+        "current_priority": -5,
+        "written_priority": null,
+        "before_complete": false,
+        "complete": false
+      }
+    },
+    {
+      "name": "negative threshold allows upgrade",
+      "input": {
+        "best_version": true,
+        "current_priority": -5,
+        "candidate_priority": -4,
+        "downloads": [
+          -4
+        ]
+      },
+      "expected": {
+        "allowed": true,
+        "current_priority": -4,
+        "written_priority": -4,
+        "before_complete": false,
+        "complete": false
+      }
+    },
+    {
+      "name": "zero candidate rejected by positive threshold",
+      "input": {
+        "best_version": true,
+        "current_priority": 1,
+        "candidate_priority": 0,
+        "downloads": null
+      },
+      "expected": {
+        "allowed": false,
+        "current_priority": 1,
+        "written_priority": null,
+        "before_complete": false,
+        "complete": false
+      }
+    },
+    {
+      "name": "legacy 90 retained",
+      "input": {
+        "best_version": true,
+        "current_priority": 90,
+        "candidate_priority": 100,
+        "downloads": null
+      },
+      "expected": {
+        "allowed": true,
+        "current_priority": 90,
+        "written_priority": null,
+        "before_complete": false,
+        "complete": false
+      }
+    },
+    {
+      "name": "legacy 100 complete",
+      "input": {
+        "best_version": true,
+        "current_priority": 100,
+        "candidate_priority": 101,
+        "downloads": null
+      },
+      "expected": {
+        "allowed": true,
+        "current_priority": 100,
+        "written_priority": null,
+        "before_complete": true,
+        "complete": true
+      }
+    },
+    {
+      "name": "legacy unknown remains unknown",
+      "input": {
+        "best_version": true,
+        "current_priority": null,
+        "candidate_priority": 90,
+        "downloads": []
+      },
+      "expected": {
+        "allowed": true,
+        "current_priority": null,
+        "written_priority": null,
+        "before_complete": false,
+        "complete": false
+      }
+    },
+    {
+      "name": "writer chooses highest accepted download",
+      "input": {
+        "best_version": true,
+        "current_priority": 80,
+        "candidate_priority": 100,
+        "downloads": [
+          90,
+          100
+        ]
+      },
+      "expected": {
+        "allowed": true,
+        "current_priority": 100,
+        "written_priority": 100,
+        "before_complete": false,
+        "complete": true
+      }
+    },
+    {
+      "name": "normal legacy quality retained",
+      "input": {
+        "best_version": false,
+        "current_priority": 70,
+        "candidate_priority": 90,
+        "downloads": []
+      },
+      "expected": {
+        "allowed": true,
+        "current_priority": 70,
+        "written_priority": null,
+        "before_complete": false,
+        "complete": false
+      }
+    }
+  ]
+}

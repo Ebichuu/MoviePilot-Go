@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "baseline": {
+    "version": "v2.15.6",
+    "commit": "458c08a137bedb4c2acebcfbbf7f6c23ef35bfbf"
+  },
+  "network": "offline-only",
+  "cases": [
+    {
+      "name": "cached-item-hit",
+      "identity": {"type": "电影", "title": "Example Movie", "year": "2026", "tmdb_id": 123},
+      "cache": {"item_id": "movie-123"},
+      "servers": [
+        {"name": "Emby-A", "get_item": {"status": 200, "body": {"Id": "movie-123", "Type": "Movie", "Name": "Example Movie", "ProductionYear": 2026, "ProviderIds": {"Tmdb": "123"}}}}
+      ],
+      "expected_calls": ["Emby-A.get_item(movie-123)"],
+      "expected_exists": true
+    },
+    {
+      "name": "stale-cache-falls-back-on-same-server",
+      "identity": {"type": "电影", "title": "Example Movie", "year": "2026", "tmdb_id": 123},
+      "cache": {"item_id": "stale-id"},
+      "servers": [
+        {
+          "name": "Emby-A",
+          "get_item": {"status": 404},
+          "search_movies": {"status": 200, "body": {"Items": [{"Id": "movie-123", "Name": "Example Movie", "ProductionYear": 2026, "ProviderIds": {"Tmdb": "123"}}], "TotalRecordCount": 1, "StartIndex": 0}}
+        }
+      ],
+      "expected_calls": ["Emby-A.get_item(stale-id)", "Emby-A.search_movies(Example Movie)"],
+      "expected_exists": true
+    },
+    {
+      "name": "reused-cache-id-is-v2-false-positive",
+      "identity": {"type": "电影", "title": "Wanted", "year": "2026", "tmdb_id": 123},
+      "cache": {"item_id": "reused-id"},
+      "servers": [
+        {"name": "Emby-A", "get_item": {"status": 200, "body": {"Id": "reused-id", "Type": "Movie", "Name": "Different", "ProductionYear": 1999, "ProviderIds": {"Tmdb": "999"}}}}
+      ],
+      "expected_calls": ["Emby-A.get_item(reused-id)"],
+      "expected_exists": true,
+      "compatibility_quirk": "V2 does not revalidate cached item identity"
+    },
+    {
+      "name": "search-filters-year-and-provider",
+      "identity": {"type": "电影", "title": "Same", "year": "2026", "tmdb_id": 123},
+      "cache": null,
+      "servers": [
+        {"name": "Emby-A", "search_movies": {"status": 200, "body": {"Items": [
+          {"Id": "wrong-year", "Name": "Same", "ProductionYear": 2025, "ProviderIds": {"Tmdb": "123"}},
+          {"Id": "wrong-provider", "Name": "Same", "ProductionYear": 2026, "ProviderIds": {"Tmdb": "999"}},
+          {"Id": "match", "Name": "Same", "ProductionYear": 2026, "ProviderIds": {"Tmdb": "123"}}
+        ], "TotalRecordCount": 3, "StartIndex": 0}}}
+      ],
+      "expected_calls": ["Emby-A.search_movies(Same)"],
+      "expected_exists": true,
+      "expected_item_id": "match"
+    },
+    {
+      "name": "multiple-exact-search-results-accept-first",
+      "identity": {"type": "电影", "title": "Same", "year": "2026", "tmdb_id": 123},
+      "cache": null,
+      "servers": [
+        {"name": "Emby-A", "search_movies": {"status": 200, "body": {"Items": [
+          {"Id": "first", "Name": "Same", "ProductionYear": 2026, "ProviderIds": {"Tmdb": "123"}},
+          {"Id": "second", "Name": "Same", "ProductionYear": 2026, "ProviderIds": {"Tmdb": "123"}}
+        ], "TotalRecordCount": 2, "StartIndex": 0}}}
+      ],
+      "expected_exists": true,
+      "expected_item_id": "first",
+      "compatibility_quirk": "V2 does not reject ambiguous fallback results"
+    },
+    {
+      "name": "first-server-failure-continues",
+      "identity": {"type": "电影", "title": "Movie", "year": "2026", "tmdb_id": null},
+      "cache": null,
+      "servers": [
+        {"name": "Emby-A", "search_movies": {"status": 503}},
+        {"name": "Emby-B", "search_movies": {"status": 200, "body": {"Items": [{"Id": "b", "Name": "Movie", "ProductionYear": 2026}], "TotalRecordCount": 1, "StartIndex": 0}}}
+      ],
+      "expected_calls": ["Emby-A.search_movies(Movie)", "Emby-B.search_movies(Movie)"],
+      "expected_exists": true
+    },
+    {
+      "name": "all-servers-fail-open",
+      "identity": {"type": "电影", "title": "Movie", "year": "2026", "tmdb_id": null},
+      "cache": null,
+      "servers": [
+        {"name": "Emby-A", "search_movies": {"status": 503}},
+        {"name": "Emby-B", "search_movies": {"status": 500}}
+      ],
+      "expected_exists": false,
+      "expected_error": null
+    }
+  ],
+  "non_deterministic_v2_cases": [
+    {
+      "name": "same-identity-cached-on-multiple-servers",
+      "reason": "MediaServerItem query uses first() without server predicate or ordering, so the selected item_id is database-plan dependent"
+    }
+  ]
+}

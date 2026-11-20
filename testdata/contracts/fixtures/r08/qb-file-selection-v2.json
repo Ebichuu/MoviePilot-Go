@@ -1,0 +1,1380 @@
+{
+  "schema_version": 1,
+  "version": "v2.15.6",
+  "commit": "458c08a137bedb4c2acebcfbbf7f6c23ef35bfbf",
+  "git_tree": "81949b6c8a2f93b7ca36b10c0faa39c3edd94517",
+  "sources": [
+    {
+      "path": "app/modules/qbittorrent/__init__.py",
+      "contract_path": "fixtures/r08/official-v2/app/modules/qbittorrent/__init__.py",
+      "sha256": "9ad7ed04eb9b99876ee91fe505af5bfbe9c2c19504c2104d0000a67fa79b4055",
+      "git_blob": "d0b54839cfc896ef8f86044913c650693688c4e3",
+      "methods": [
+        {
+          "name": "get_files retry constants",
+          "lines": [
+            40,
+            41
+          ],
+          "source": "_TORRENT_FILES_RETRY_TIMES = 5\n_TORRENT_FILES_RETRY_INTERVAL = 1"
+        },
+        {
+          "name": "download is_paused",
+          "lines": [
+            186,
+            186
+          ],
+          "source": "is_paused = True if episodes else False"
+        },
+        {
+          "name": "download selection branch",
+          "lines": [
+            238,
+            278
+          ],
+          "source": "if is_paused:\n                    # 种子文件\n                    torrent_files = server.get_files(\n                        torrent_hash,\n                        retry=_TORRENT_FILES_RETRY_TIMES,\n                        interval=_TORRENT_FILES_RETRY_INTERVAL,\n                    )\n                    if not torrent_files:\n                        return downloader or self.get_default_config_name(), torrent_hash, torrent_layout, \"获取种子文件失败，下载任务可能在暂停状态\"\n\n                    # 不需要的文件ID\n                    file_ids = []\n                    # 需要的集清单\n                    sucess_epidised = []\n                    try:\n                        for torrent_file in torrent_files:\n                            file_id = torrent_file.get(\"id\")\n                            file_name = torrent_file.get(\"name\")\n                            meta_info = MetaInfo(file_name)\n                            if not meta_info.episode_list \\\n                                    or not set(meta_info.episode_list).issubset(episodes):\n                                file_ids.append(file_id)\n                            else:\n                                sucess_epidised = list(set(sucess_epidised).union(set(meta_info.episode_list)))\n                    finally:\n                        torrent_files.clear()\n                        del torrent_files\n                    if sucess_epidised and file_ids:\n                        # 选择文件\n                        server.set_files(torrent_hash=torrent_hash, file_ids=file_ids, priority=0)\n                    # 开始任务\n                    if server.is_force_resume():\n                        # 强制继续\n                        server.torrents_set_force_start(torrent_hash)\n                    else:\n                        server.start_torrents(torrent_hash)\n                    return downloader or self.get_default_config_name(), torrent_hash, torrent_layout, f\"添加下载成功，已选择集数：{sucess_epidised}\"\n                else:\n                    if server.is_force_resume():\n                        server.torrents_set_force_start(torrent_hash)\n                    return downloader or self.get_default_config_name(), torrent_hash, torrent_layout, \"添加下载成功\""
+        }
+      ]
+    }
+  ],
+  "scope": "qB download 已获得 hash 后的选集分支；只迁非空列表无匹配恢复行为。",
+  "executed_frozen_ast": [
+    "module:40-41 retry constants",
+    "download:186 is_paused assignment",
+    "download:238-278 selection branch"
+  ],
+  "stub_boundaries": {
+    "upstream": "不执行种子解析或 Add；输入视为已获得 hash。本片不核已有任务返回路径。",
+    "metadata": "MetaInfo 根据输入 file.episodes 返回集号；不执行原版文件名、季号或扩展名解析。",
+    "downloader": "get_files/set_files/start/force-start 为透明记录桩，按输入返回 false 或抛异常；没有真实 qB 请求。",
+    "retry": "get_files 接收原版 retry/interval 参数，桩不执行重试等待。",
+    "cancellation": "仅在替身边界注入 Python asyncio.CancelledError；不代表 V2 自有取消机制或 Go context 差分。",
+    "orchestration": "包装函数直接执行原版赋值和 if AST，未调用完整 download 方法或真实添加/接受事务。"
+  },
+  "cases": [
+    {
+      "name": "nonempty_no_match_resumes_unchanged",
+      "input": {
+        "episodes": [
+          1
+        ],
+        "files": [
+          {
+            "id": 0,
+            "name": "Show.S01E02.mkv",
+            "episodes": [
+              2
+            ],
+            "priority": 1
+          }
+        ],
+        "force_resume": false,
+        "set_files_result": true,
+        "start_result": true,
+        "force_result": true,
+        "raise_at": null,
+        "cancellation": false
+      },
+      "expected": {
+        "result": [
+          "fixture-qb",
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "Original",
+          "添加下载成功，已选择集数：[]"
+        ],
+        "exception": null,
+        "calls": [
+          {
+            "method": "get_files",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "retry": 5,
+            "interval": 1
+          },
+          {
+            "method": "MetaInfo",
+            "name": "Show.S01E02.mkv"
+          },
+          {
+            "method": "clear_files"
+          },
+          {
+            "method": "is_force_resume"
+          },
+          {
+            "method": "start_torrents",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "fetched_file_list_cleared": true
+      }
+    },
+    {
+      "name": "nonempty_unrecognized_files_resume_unchanged",
+      "input": {
+        "episodes": [
+          1
+        ],
+        "files": [
+          {
+            "id": 0,
+            "name": "Show.readme.0.txt",
+            "episodes": [],
+            "priority": 1
+          },
+          {
+            "id": 1,
+            "name": "Show.readme.1.txt",
+            "episodes": [],
+            "priority": 1
+          }
+        ],
+        "force_resume": false,
+        "set_files_result": true,
+        "start_result": true,
+        "force_result": true,
+        "raise_at": null,
+        "cancellation": false
+      },
+      "expected": {
+        "result": [
+          "fixture-qb",
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "Original",
+          "添加下载成功，已选择集数：[]"
+        ],
+        "exception": null,
+        "calls": [
+          {
+            "method": "get_files",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "retry": 5,
+            "interval": 1
+          },
+          {
+            "method": "MetaInfo",
+            "name": "Show.readme.0.txt"
+          },
+          {
+            "method": "MetaInfo",
+            "name": "Show.readme.1.txt"
+          },
+          {
+            "method": "clear_files"
+          },
+          {
+            "method": "is_force_resume"
+          },
+          {
+            "method": "start_torrents",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "fetched_file_list_cleared": true
+      }
+    },
+    {
+      "name": "mixed_match_disables_only_unwanted",
+      "input": {
+        "episodes": [
+          1
+        ],
+        "files": [
+          {
+            "id": 0,
+            "name": "Show.S01E01.mkv",
+            "episodes": [
+              1
+            ],
+            "priority": 1
+          },
+          {
+            "id": 1,
+            "name": "Show.S01E02.mkv",
+            "episodes": [
+              2
+            ],
+            "priority": 1
+          },
+          {
+            "id": 2,
+            "name": "Show.readme.2.txt",
+            "episodes": [],
+            "priority": 1
+          }
+        ],
+        "force_resume": false,
+        "set_files_result": true,
+        "start_result": true,
+        "force_result": true,
+        "raise_at": null,
+        "cancellation": false
+      },
+      "expected": {
+        "result": [
+          "fixture-qb",
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "Original",
+          "添加下载成功，已选择集数：[1]"
+        ],
+        "exception": null,
+        "calls": [
+          {
+            "method": "get_files",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "retry": 5,
+            "interval": 1
+          },
+          {
+            "method": "MetaInfo",
+            "name": "Show.S01E01.mkv"
+          },
+          {
+            "method": "MetaInfo",
+            "name": "Show.S01E02.mkv"
+          },
+          {
+            "method": "MetaInfo",
+            "name": "Show.readme.2.txt"
+          },
+          {
+            "method": "clear_files"
+          },
+          {
+            "method": "set_files",
+            "torrent_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "file_ids": [
+              1,
+              2
+            ],
+            "priority": 0
+          },
+          {
+            "method": "is_force_resume"
+          },
+          {
+            "method": "start_torrents",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "fetched_file_list_cleared": true
+      }
+    },
+    {
+      "name": "all_match_resumes_without_priority_write",
+      "input": {
+        "episodes": [
+          1,
+          2
+        ],
+        "files": [
+          {
+            "id": 0,
+            "name": "Show.S01E01.mkv",
+            "episodes": [
+              1
+            ],
+            "priority": 1
+          },
+          {
+            "id": 1,
+            "name": "Show.S01E02.mkv",
+            "episodes": [
+              2
+            ],
+            "priority": 1
+          }
+        ],
+        "force_resume": false,
+        "set_files_result": true,
+        "start_result": true,
+        "force_result": true,
+        "raise_at": null,
+        "cancellation": false
+      },
+      "expected": {
+        "result": [
+          "fixture-qb",
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "Original",
+          "添加下载成功，已选择集数：[1, 2]"
+        ],
+        "exception": null,
+        "calls": [
+          {
+            "method": "get_files",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "retry": 5,
+            "interval": 1
+          },
+          {
+            "method": "MetaInfo",
+            "name": "Show.S01E01.mkv"
+          },
+          {
+            "method": "MetaInfo",
+            "name": "Show.S01E02.mkv"
+          },
+          {
+            "method": "clear_files"
+          },
+          {
+            "method": "is_force_resume"
+          },
+          {
+            "method": "start_torrents",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "fetched_file_list_cleared": true
+      }
+    },
+    {
+      "name": "partially_requested_multi_episode_file_is_no_match",
+      "input": {
+        "episodes": [
+          1
+        ],
+        "files": [
+          {
+            "id": 0,
+            "name": "Show.S01E01-E02.mkv",
+            "episodes": [
+              1,
+              2
+            ],
+            "priority": 1
+          }
+        ],
+        "force_resume": false,
+        "set_files_result": true,
+        "start_result": true,
+        "force_result": true,
+        "raise_at": null,
+        "cancellation": false
+      },
+      "expected": {
+        "result": [
+          "fixture-qb",
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "Original",
+          "添加下载成功，已选择集数：[]"
+        ],
+        "exception": null,
+        "calls": [
+          {
+            "method": "get_files",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "retry": 5,
+            "interval": 1
+          },
+          {
+            "method": "MetaInfo",
+            "name": "Show.S01E01-E02.mkv"
+          },
+          {
+            "method": "clear_files"
+          },
+          {
+            "method": "is_force_resume"
+          },
+          {
+            "method": "start_torrents",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "fetched_file_list_cleared": true
+      }
+    },
+    {
+      "name": "no_match_force_resume",
+      "input": {
+        "episodes": [
+          1
+        ],
+        "files": [
+          {
+            "id": 0,
+            "name": "Show.S01E02.mkv",
+            "episodes": [
+              2
+            ],
+            "priority": 1
+          }
+        ],
+        "force_resume": true,
+        "set_files_result": true,
+        "start_result": true,
+        "force_result": true,
+        "raise_at": null,
+        "cancellation": false
+      },
+      "expected": {
+        "result": [
+          "fixture-qb",
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "Original",
+          "添加下载成功，已选择集数：[]"
+        ],
+        "exception": null,
+        "calls": [
+          {
+            "method": "get_files",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "retry": 5,
+            "interval": 1
+          },
+          {
+            "method": "MetaInfo",
+            "name": "Show.S01E02.mkv"
+          },
+          {
+            "method": "clear_files"
+          },
+          {
+            "method": "is_force_resume"
+          },
+          {
+            "method": "torrents_set_force_start",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "fetched_file_list_cleared": true
+      }
+    },
+    {
+      "name": "mixed_match_force_resume",
+      "input": {
+        "episodes": [
+          1
+        ],
+        "files": [
+          {
+            "id": 0,
+            "name": "Show.S01E01.mkv",
+            "episodes": [
+              1
+            ],
+            "priority": 1
+          },
+          {
+            "id": 1,
+            "name": "Show.S01E02.mkv",
+            "episodes": [
+              2
+            ],
+            "priority": 1
+          },
+          {
+            "id": 2,
+            "name": "Show.readme.2.txt",
+            "episodes": [],
+            "priority": 1
+          }
+        ],
+        "force_resume": true,
+        "set_files_result": true,
+        "start_result": true,
+        "force_result": true,
+        "raise_at": null,
+        "cancellation": false
+      },
+      "expected": {
+        "result": [
+          "fixture-qb",
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "Original",
+          "添加下载成功，已选择集数：[1]"
+        ],
+        "exception": null,
+        "calls": [
+          {
+            "method": "get_files",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "retry": 5,
+            "interval": 1
+          },
+          {
+            "method": "MetaInfo",
+            "name": "Show.S01E01.mkv"
+          },
+          {
+            "method": "MetaInfo",
+            "name": "Show.S01E02.mkv"
+          },
+          {
+            "method": "MetaInfo",
+            "name": "Show.readme.2.txt"
+          },
+          {
+            "method": "clear_files"
+          },
+          {
+            "method": "set_files",
+            "torrent_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "file_ids": [
+              1,
+              2
+            ],
+            "priority": 0
+          },
+          {
+            "method": "is_force_resume"
+          },
+          {
+            "method": "torrents_set_force_start",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "fetched_file_list_cleared": true
+      }
+    },
+    {
+      "name": "empty_file_list_returns_hash_without_resume",
+      "input": {
+        "episodes": [
+          1
+        ],
+        "files": [],
+        "force_resume": false,
+        "set_files_result": true,
+        "start_result": true,
+        "force_result": true,
+        "raise_at": null,
+        "cancellation": false
+      },
+      "expected": {
+        "result": [
+          "fixture-qb",
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "Original",
+          "获取种子文件失败，下载任务可能在暂停状态"
+        ],
+        "exception": null,
+        "calls": [
+          {
+            "method": "get_files",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "retry": 5,
+            "interval": 1
+          }
+        ],
+        "fetched_file_list_cleared": false
+      }
+    },
+    {
+      "name": "unavailable_file_list_returns_hash_without_resume",
+      "input": {
+        "episodes": [
+          1
+        ],
+        "files": null,
+        "force_resume": false,
+        "set_files_result": true,
+        "start_result": true,
+        "force_result": true,
+        "raise_at": null,
+        "cancellation": false
+      },
+      "expected": {
+        "result": [
+          "fixture-qb",
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "Original",
+          "获取种子文件失败，下载任务可能在暂停状态"
+        ],
+        "exception": null,
+        "calls": [
+          {
+            "method": "get_files",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "retry": 5,
+            "interval": 1
+          }
+        ],
+        "fetched_file_list_cleared": null
+      }
+    },
+    {
+      "name": "empty_targets_skip_file_query",
+      "input": {
+        "episodes": [],
+        "files": [
+          {
+            "id": 0,
+            "name": "Show.S01E02.mkv",
+            "episodes": [
+              2
+            ],
+            "priority": 1
+          }
+        ],
+        "force_resume": false,
+        "set_files_result": true,
+        "start_result": true,
+        "force_result": true,
+        "raise_at": null,
+        "cancellation": false
+      },
+      "expected": {
+        "result": [
+          "fixture-qb",
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "Original",
+          "添加下载成功"
+        ],
+        "exception": null,
+        "calls": [
+          {
+            "method": "is_force_resume"
+          }
+        ],
+        "fetched_file_list_cleared": false
+      }
+    },
+    {
+      "name": "empty_targets_force_start",
+      "input": {
+        "episodes": [],
+        "files": [
+          {
+            "id": 0,
+            "name": "Show.S01E02.mkv",
+            "episodes": [
+              2
+            ],
+            "priority": 1
+          }
+        ],
+        "force_resume": true,
+        "set_files_result": true,
+        "start_result": true,
+        "force_result": true,
+        "raise_at": null,
+        "cancellation": false
+      },
+      "expected": {
+        "result": [
+          "fixture-qb",
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "Original",
+          "添加下载成功"
+        ],
+        "exception": null,
+        "calls": [
+          {
+            "method": "is_force_resume"
+          },
+          {
+            "method": "torrents_set_force_start",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "fetched_file_list_cleared": false
+      }
+    },
+    {
+      "name": "set_files_false_still_resumes",
+      "input": {
+        "episodes": [
+          1
+        ],
+        "files": [
+          {
+            "id": 0,
+            "name": "Show.S01E01.mkv",
+            "episodes": [
+              1
+            ],
+            "priority": 1
+          },
+          {
+            "id": 1,
+            "name": "Show.S01E02.mkv",
+            "episodes": [
+              2
+            ],
+            "priority": 1
+          },
+          {
+            "id": 2,
+            "name": "Show.readme.2.txt",
+            "episodes": [],
+            "priority": 1
+          }
+        ],
+        "force_resume": false,
+        "set_files_result": false,
+        "start_result": true,
+        "force_result": true,
+        "raise_at": null,
+        "cancellation": false
+      },
+      "expected": {
+        "result": [
+          "fixture-qb",
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "Original",
+          "添加下载成功，已选择集数：[1]"
+        ],
+        "exception": null,
+        "calls": [
+          {
+            "method": "get_files",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "retry": 5,
+            "interval": 1
+          },
+          {
+            "method": "MetaInfo",
+            "name": "Show.S01E01.mkv"
+          },
+          {
+            "method": "MetaInfo",
+            "name": "Show.S01E02.mkv"
+          },
+          {
+            "method": "MetaInfo",
+            "name": "Show.readme.2.txt"
+          },
+          {
+            "method": "clear_files"
+          },
+          {
+            "method": "set_files",
+            "torrent_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "file_ids": [
+              1,
+              2
+            ],
+            "priority": 0
+          },
+          {
+            "method": "is_force_resume"
+          },
+          {
+            "method": "start_torrents",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "fetched_file_list_cleared": true
+      }
+    },
+    {
+      "name": "start_false_still_returns_hash",
+      "input": {
+        "episodes": [
+          1
+        ],
+        "files": [
+          {
+            "id": 0,
+            "name": "Show.S01E02.mkv",
+            "episodes": [
+              2
+            ],
+            "priority": 1
+          }
+        ],
+        "force_resume": false,
+        "set_files_result": true,
+        "start_result": false,
+        "force_result": true,
+        "raise_at": null,
+        "cancellation": false
+      },
+      "expected": {
+        "result": [
+          "fixture-qb",
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "Original",
+          "添加下载成功，已选择集数：[]"
+        ],
+        "exception": null,
+        "calls": [
+          {
+            "method": "get_files",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "retry": 5,
+            "interval": 1
+          },
+          {
+            "method": "MetaInfo",
+            "name": "Show.S01E02.mkv"
+          },
+          {
+            "method": "clear_files"
+          },
+          {
+            "method": "is_force_resume"
+          },
+          {
+            "method": "start_torrents",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "fetched_file_list_cleared": true
+      }
+    },
+    {
+      "name": "force_start_false_still_returns_hash",
+      "input": {
+        "episodes": [
+          1
+        ],
+        "files": [
+          {
+            "id": 0,
+            "name": "Show.S01E02.mkv",
+            "episodes": [
+              2
+            ],
+            "priority": 1
+          }
+        ],
+        "force_resume": true,
+        "set_files_result": true,
+        "start_result": true,
+        "force_result": false,
+        "raise_at": null,
+        "cancellation": false
+      },
+      "expected": {
+        "result": [
+          "fixture-qb",
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "Original",
+          "添加下载成功，已选择集数：[]"
+        ],
+        "exception": null,
+        "calls": [
+          {
+            "method": "get_files",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "retry": 5,
+            "interval": 1
+          },
+          {
+            "method": "MetaInfo",
+            "name": "Show.S01E02.mkv"
+          },
+          {
+            "method": "clear_files"
+          },
+          {
+            "method": "is_force_resume"
+          },
+          {
+            "method": "torrents_set_force_start",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "fetched_file_list_cleared": true
+      }
+    },
+    {
+      "name": "set_and_start_false_still_return_hash",
+      "input": {
+        "episodes": [
+          1
+        ],
+        "files": [
+          {
+            "id": 0,
+            "name": "Show.S01E01.mkv",
+            "episodes": [
+              1
+            ],
+            "priority": 1
+          },
+          {
+            "id": 1,
+            "name": "Show.S01E02.mkv",
+            "episodes": [
+              2
+            ],
+            "priority": 1
+          },
+          {
+            "id": 2,
+            "name": "Show.readme.2.txt",
+            "episodes": [],
+            "priority": 1
+          }
+        ],
+        "force_resume": false,
+        "set_files_result": false,
+        "start_result": false,
+        "force_result": true,
+        "raise_at": null,
+        "cancellation": false
+      },
+      "expected": {
+        "result": [
+          "fixture-qb",
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "Original",
+          "添加下载成功，已选择集数：[1]"
+        ],
+        "exception": null,
+        "calls": [
+          {
+            "method": "get_files",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "retry": 5,
+            "interval": 1
+          },
+          {
+            "method": "MetaInfo",
+            "name": "Show.S01E01.mkv"
+          },
+          {
+            "method": "MetaInfo",
+            "name": "Show.S01E02.mkv"
+          },
+          {
+            "method": "MetaInfo",
+            "name": "Show.readme.2.txt"
+          },
+          {
+            "method": "clear_files"
+          },
+          {
+            "method": "set_files",
+            "torrent_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "file_ids": [
+              1,
+              2
+            ],
+            "priority": 0
+          },
+          {
+            "method": "is_force_resume"
+          },
+          {
+            "method": "start_torrents",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "fetched_file_list_cleared": true
+      }
+    },
+    {
+      "name": "get_files_exception_propagates",
+      "input": {
+        "episodes": [
+          1
+        ],
+        "files": [
+          {
+            "id": 0,
+            "name": "Show.S01E02.mkv",
+            "episodes": [
+              2
+            ],
+            "priority": 1
+          }
+        ],
+        "force_resume": false,
+        "set_files_result": true,
+        "start_result": true,
+        "force_result": true,
+        "raise_at": "get_files",
+        "cancellation": false
+      },
+      "expected": {
+        "result": null,
+        "exception": "RuntimeError",
+        "calls": [
+          {
+            "method": "get_files",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "retry": 5,
+            "interval": 1
+          }
+        ],
+        "fetched_file_list_cleared": false
+      }
+    },
+    {
+      "name": "meta_exception_clears_file_list_and_propagates",
+      "input": {
+        "episodes": [
+          1
+        ],
+        "files": [
+          {
+            "id": 0,
+            "name": "Show.S01E01.mkv",
+            "episodes": [
+              1
+            ],
+            "priority": 1
+          },
+          {
+            "id": 1,
+            "name": "Show.S01E02.mkv",
+            "episodes": [
+              2
+            ],
+            "priority": 1
+          },
+          {
+            "id": 2,
+            "name": "Show.readme.2.txt",
+            "episodes": [],
+            "priority": 1
+          }
+        ],
+        "force_resume": false,
+        "set_files_result": true,
+        "start_result": true,
+        "force_result": true,
+        "raise_at": "MetaInfo",
+        "cancellation": false
+      },
+      "expected": {
+        "result": null,
+        "exception": "RuntimeError",
+        "calls": [
+          {
+            "method": "get_files",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "retry": 5,
+            "interval": 1
+          },
+          {
+            "method": "MetaInfo",
+            "name": "Show.S01E01.mkv"
+          },
+          {
+            "method": "clear_files"
+          }
+        ],
+        "fetched_file_list_cleared": true
+      }
+    },
+    {
+      "name": "priority_exception_propagates_before_resume",
+      "input": {
+        "episodes": [
+          1
+        ],
+        "files": [
+          {
+            "id": 0,
+            "name": "Show.S01E01.mkv",
+            "episodes": [
+              1
+            ],
+            "priority": 1
+          },
+          {
+            "id": 1,
+            "name": "Show.S01E02.mkv",
+            "episodes": [
+              2
+            ],
+            "priority": 1
+          },
+          {
+            "id": 2,
+            "name": "Show.readme.2.txt",
+            "episodes": [],
+            "priority": 1
+          }
+        ],
+        "force_resume": false,
+        "set_files_result": true,
+        "start_result": true,
+        "force_result": true,
+        "raise_at": "set_files",
+        "cancellation": false
+      },
+      "expected": {
+        "result": null,
+        "exception": "RuntimeError",
+        "calls": [
+          {
+            "method": "get_files",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "retry": 5,
+            "interval": 1
+          },
+          {
+            "method": "MetaInfo",
+            "name": "Show.S01E01.mkv"
+          },
+          {
+            "method": "MetaInfo",
+            "name": "Show.S01E02.mkv"
+          },
+          {
+            "method": "MetaInfo",
+            "name": "Show.readme.2.txt"
+          },
+          {
+            "method": "clear_files"
+          },
+          {
+            "method": "set_files",
+            "torrent_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "file_ids": [
+              1,
+              2
+            ],
+            "priority": 0
+          }
+        ],
+        "fetched_file_list_cleared": true
+      }
+    },
+    {
+      "name": "start_exception_propagates",
+      "input": {
+        "episodes": [
+          1
+        ],
+        "files": [
+          {
+            "id": 0,
+            "name": "Show.S01E02.mkv",
+            "episodes": [
+              2
+            ],
+            "priority": 1
+          }
+        ],
+        "force_resume": false,
+        "set_files_result": true,
+        "start_result": true,
+        "force_result": true,
+        "raise_at": "start_torrents",
+        "cancellation": false
+      },
+      "expected": {
+        "result": null,
+        "exception": "RuntimeError",
+        "calls": [
+          {
+            "method": "get_files",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "retry": 5,
+            "interval": 1
+          },
+          {
+            "method": "MetaInfo",
+            "name": "Show.S01E02.mkv"
+          },
+          {
+            "method": "clear_files"
+          },
+          {
+            "method": "is_force_resume"
+          },
+          {
+            "method": "start_torrents",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "fetched_file_list_cleared": true
+      }
+    },
+    {
+      "name": "force_start_exception_propagates",
+      "input": {
+        "episodes": [
+          1
+        ],
+        "files": [
+          {
+            "id": 0,
+            "name": "Show.S01E02.mkv",
+            "episodes": [
+              2
+            ],
+            "priority": 1
+          }
+        ],
+        "force_resume": true,
+        "set_files_result": true,
+        "start_result": true,
+        "force_result": true,
+        "raise_at": "torrents_set_force_start",
+        "cancellation": false
+      },
+      "expected": {
+        "result": null,
+        "exception": "RuntimeError",
+        "calls": [
+          {
+            "method": "get_files",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "retry": 5,
+            "interval": 1
+          },
+          {
+            "method": "MetaInfo",
+            "name": "Show.S01E02.mkv"
+          },
+          {
+            "method": "clear_files"
+          },
+          {
+            "method": "is_force_resume"
+          },
+          {
+            "method": "torrents_set_force_start",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "fetched_file_list_cleared": true
+      }
+    },
+    {
+      "name": "injected_cancel_at_get_files_propagates",
+      "input": {
+        "episodes": [
+          1
+        ],
+        "files": [
+          {
+            "id": 0,
+            "name": "Show.S01E02.mkv",
+            "episodes": [
+              2
+            ],
+            "priority": 1
+          }
+        ],
+        "force_resume": false,
+        "set_files_result": true,
+        "start_result": true,
+        "force_result": true,
+        "raise_at": "get_files",
+        "cancellation": true
+      },
+      "expected": {
+        "result": null,
+        "exception": "CancelledError",
+        "calls": [
+          {
+            "method": "get_files",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "retry": 5,
+            "interval": 1
+          }
+        ],
+        "fetched_file_list_cleared": false
+      }
+    },
+    {
+      "name": "injected_cancel_at_meta_clears_file_list",
+      "input": {
+        "episodes": [
+          1
+        ],
+        "files": [
+          {
+            "id": 0,
+            "name": "Show.S01E01.mkv",
+            "episodes": [
+              1
+            ],
+            "priority": 1
+          },
+          {
+            "id": 1,
+            "name": "Show.S01E02.mkv",
+            "episodes": [
+              2
+            ],
+            "priority": 1
+          },
+          {
+            "id": 2,
+            "name": "Show.readme.2.txt",
+            "episodes": [],
+            "priority": 1
+          }
+        ],
+        "force_resume": false,
+        "set_files_result": true,
+        "start_result": true,
+        "force_result": true,
+        "raise_at": "MetaInfo",
+        "cancellation": true
+      },
+      "expected": {
+        "result": null,
+        "exception": "CancelledError",
+        "calls": [
+          {
+            "method": "get_files",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "retry": 5,
+            "interval": 1
+          },
+          {
+            "method": "MetaInfo",
+            "name": "Show.S01E01.mkv"
+          },
+          {
+            "method": "clear_files"
+          }
+        ],
+        "fetched_file_list_cleared": true
+      }
+    },
+    {
+      "name": "injected_cancel_at_start_propagates",
+      "input": {
+        "episodes": [
+          1
+        ],
+        "files": [
+          {
+            "id": 0,
+            "name": "Show.S01E02.mkv",
+            "episodes": [
+              2
+            ],
+            "priority": 1
+          }
+        ],
+        "force_resume": false,
+        "set_files_result": true,
+        "start_result": true,
+        "force_result": true,
+        "raise_at": "start_torrents",
+        "cancellation": true
+      },
+      "expected": {
+        "result": null,
+        "exception": "CancelledError",
+        "calls": [
+          {
+            "method": "get_files",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "retry": 5,
+            "interval": 1
+          },
+          {
+            "method": "MetaInfo",
+            "name": "Show.S01E02.mkv"
+          },
+          {
+            "method": "clear_files"
+          },
+          {
+            "method": "is_force_resume"
+          },
+          {
+            "method": "start_torrents",
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "fetched_file_list_cleared": true
+      }
+    }
+  ]
+}

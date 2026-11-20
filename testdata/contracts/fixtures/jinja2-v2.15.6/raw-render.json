@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "scope": "jinja2.Template(template).render(context)",
+  "v2_source": "app/helper/message.py:430-438",
+  "runtime": "Python Jinja2 3.1.6",
+  "cases": [
+    {"name":"variable","template":"{{ name }}","context":{"name":"电影"},"output":"电影"},
+    {"name":"condition","template":"{% if enabled %}开{% else %}关{% endif %}","context":{"enabled":true},"output":"开"},
+    {"name":"loop","template":"{% for n in values %}{{ n }}{% if not loop.last %},{% endif %}{% endfor %}","context":{"values":[1,2,3]},"output":"1,2,3"},
+    {"name":"filters","template":"{{ missing|default('无') }}|{{ values|join('-') }}|{{ values|length }}","context":{"values":["甲","乙"]},"output":"无|甲-乙|2"},
+    {"name":"undefined","template":"A{{ missing }}B","context":{},"output":"AB"},
+    {"name":"autoescape-disabled","template":"{{ html }}","context":{"html":"<b>x</b>"},"output":"<b>x</b>"},
+    {"name":"mapping-attribute","template":"{{ media.title }}","context":{"media":{"title":"示例"}},"output":"示例"},
+    {"name":"unicode","template":"🎬 {{ title }}","context":{"title":"流浪地球"},"output":"🎬 流浪地球"},
+    {"name":"syntax-error","template":"{% if enabled %}","context":{"enabled":true},"error_type":"TemplateSyntaxError"},
+    {"name":"runtime-error","template":"{{ 1 / 0 }}","context":{},"error_type":"ZeroDivisionError"}
+  ],
+  "limitations": "只锁定 V2 直接调用的原始 Jinja render 层；literal/dict 解析、完整业务上下文和渲染后 JSON 恢复仍需 R16 fixture。"
+}

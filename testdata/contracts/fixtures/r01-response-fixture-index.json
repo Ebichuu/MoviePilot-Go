@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "baseline": {
+    "version": "v2.15.6",
+    "commit": "458c08a137bedb4c2acebcfbbf7f6c23ef35bfbf"
+  },
+  "normalization_policy": {
+    "allowed_only_when_declared_per_case": ["timestamp", "random_id", "request_id"],
+    "never_implicit": ["missing_vs_null", "array_order", "object_field", "http_status", "error_code", "error_message"]
+  },
+  "required_variants": ["normal", "empty", "failure", "permission"],
+  "capture_status": "missing_shared_v2_response_fixtures",
+  "cases": [],
+  "available_go_contract_evidence": [
+    "internal/httpapi/compatibility_test.go",
+    "internal/httpapi/notification_history_test.go",
+    "internal/httpapi/site_userdata_test.go",
+    "internal/httpapi/site_userdata_post_test.go",
+    "internal/httpapi/system_env_test.go"
+  ],
+  "capture_tracks": {
+    "official_frontend_runtime": {
+      "status": "blocked",
+      "blocker": "尚无匹配当前源码 SHA 的隔离候选服务，无法录制官方前端运行期请求。"
+    },
+    "offline_python_v2_responses": {
+      "status": "not_attempted",
+      "blocker": "尚未验证本地 Python V2 对照运行所需依赖，也未执行脱网响应捕获；此项不依赖候选镜像或代码推送。"
+    }
+  },
+  "blocker": "官方前端运行期录制与 Python 离线响应捕获均未完成，原因分别记录；现有 Go 测试不能伪装成 V2 观测值。"
+}

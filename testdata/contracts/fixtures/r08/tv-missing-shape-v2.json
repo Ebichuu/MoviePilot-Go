@@ -1,0 +1,4040 @@
+{
+  "schema_version": 1,
+  "sources": [
+    {
+      "path": "baselines/2026-09-13/official-v2/app/chain/download.py",
+      "sha256": "ecfaaa2b2777809924aeb32632afa53d8eb701c7ee76e333099d6847988fc003",
+      "methods": {
+        "get_no_exists_info": [
+          1586,
+          1721
+        ]
+      }
+    },
+    {
+      "path": "baselines/2026-09-13/official-v2/app/chain/subscribe.py",
+      "sha256": "acb32d818b2cb8bf8dec3062e1b9155595b2045b8de08aa7db3005f6d48b0f95",
+      "methods": {
+        "__get_subscribe_no_exits": [
+          3587,
+          3705
+        ],
+        "__resolve_effective_total_episode": [
+          4176,
+          4194
+        ]
+      }
+    }
+  ],
+  "scope": "普通 TV：有效总集数、媒体库缺集、订阅范围和已下载 note 的只读组合。",
+  "cases": [
+    {
+      "name": "empty_library_preserves_whole_season",
+      "compatibility": "native_count_expansion",
+      "input": {
+        "metadata_seasons": {
+          "1": [
+            1,
+            2,
+            3
+          ]
+        },
+        "recognized_seasons": null,
+        "library_seasons": null,
+        "pass_totals": true,
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "manual_total_episode": false,
+          "note": []
+        }
+      },
+      "stages": {
+        "effective_total": {
+          "input": {
+            "subscribe": {
+              "type": "电视剧",
+              "season": 1,
+              "start_episode": 1,
+              "total_episode": 3,
+              "manual_total_episode": false,
+              "note": []
+            },
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            }
+          },
+          "expected": 3
+        },
+        "library_missing": {
+          "input": {
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            },
+            "totals": {
+              "1": 3
+            },
+            "library_seasons": null
+          },
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "whole_season"
+          },
+          "library_calls": 1,
+          "recognition_calls": 0
+        },
+        "subscription_missing": {
+          "input": {
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "mediakey": "tmdb:123",
+            "begin_season": 1,
+            "total_episode": 3,
+            "start_episode": 1,
+            "downloaded_episodes": []
+          },
+          "skipped": false,
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "whole_season"
+          }
+        }
+      },
+      "expected": {
+        "satisfied": false,
+        "no_exists": {
+          "tmdb:123": {
+            "1": {
+              "season": 1,
+              "episodes": [],
+              "total_episode": 3,
+              "start_episode": 1,
+              "require_complete_coverage": false
+            }
+          }
+        },
+        "shape": "whole_season"
+      }
+    },
+    {
+      "name": "empty_target_season_preserves_whole_season",
+      "compatibility": "native_count_expansion",
+      "input": {
+        "metadata_seasons": {
+          "1": [
+            1,
+            2,
+            3
+          ]
+        },
+        "recognized_seasons": null,
+        "library_seasons": {
+          "1": []
+        },
+        "pass_totals": true,
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "manual_total_episode": false,
+          "note": []
+        }
+      },
+      "stages": {
+        "effective_total": {
+          "input": {
+            "subscribe": {
+              "type": "电视剧",
+              "season": 1,
+              "start_episode": 1,
+              "total_episode": 3,
+              "manual_total_episode": false,
+              "note": []
+            },
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            }
+          },
+          "expected": 3
+        },
+        "library_missing": {
+          "input": {
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            },
+            "totals": {
+              "1": 3
+            },
+            "library_seasons": {
+              "1": []
+            }
+          },
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "whole_season"
+          },
+          "library_calls": 1,
+          "recognition_calls": 0
+        },
+        "subscription_missing": {
+          "input": {
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "mediakey": "tmdb:123",
+            "begin_season": 1,
+            "total_episode": 3,
+            "start_episode": 1,
+            "downloaded_episodes": []
+          },
+          "skipped": false,
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "whole_season"
+          }
+        }
+      },
+      "expected": {
+        "satisfied": false,
+        "no_exists": {
+          "tmdb:123": {
+            "1": {
+              "season": 1,
+              "episodes": [],
+              "total_episode": 3,
+              "start_episode": 1,
+              "require_complete_coverage": false
+            }
+          }
+        },
+        "shape": "whole_season"
+      }
+    },
+    {
+      "name": "other_season_only_preserves_whole_season",
+      "compatibility": "native_count_expansion",
+      "input": {
+        "metadata_seasons": {
+          "1": [
+            1,
+            2,
+            3
+          ]
+        },
+        "recognized_seasons": null,
+        "library_seasons": {
+          "2": [
+            1,
+            2,
+            3
+          ]
+        },
+        "pass_totals": true,
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "manual_total_episode": false,
+          "note": []
+        }
+      },
+      "stages": {
+        "effective_total": {
+          "input": {
+            "subscribe": {
+              "type": "电视剧",
+              "season": 1,
+              "start_episode": 1,
+              "total_episode": 3,
+              "manual_total_episode": false,
+              "note": []
+            },
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            }
+          },
+          "expected": 3
+        },
+        "library_missing": {
+          "input": {
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            },
+            "totals": {
+              "1": 3
+            },
+            "library_seasons": {
+              "2": [
+                1,
+                2,
+                3
+              ]
+            }
+          },
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "whole_season"
+          },
+          "library_calls": 1,
+          "recognition_calls": 0
+        },
+        "subscription_missing": {
+          "input": {
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "mediakey": "tmdb:123",
+            "begin_season": 1,
+            "total_episode": 3,
+            "start_episode": 1,
+            "downloaded_episodes": []
+          },
+          "skipped": false,
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "whole_season"
+          }
+        }
+      },
+      "expected": {
+        "satisfied": false,
+        "no_exists": {
+          "tmdb:123": {
+            "1": {
+              "season": 1,
+              "episodes": [],
+              "total_episode": 3,
+              "start_episode": 1,
+              "require_complete_coverage": false
+            }
+          }
+        },
+        "shape": "whole_season"
+      }
+    },
+    {
+      "name": "other_season_outside_does_not_materialize_target",
+      "compatibility": "native_count_expansion",
+      "input": {
+        "metadata_seasons": {
+          "1": [
+            1,
+            2,
+            3
+          ]
+        },
+        "recognized_seasons": null,
+        "library_seasons": {
+          "2": [
+            9
+          ]
+        },
+        "pass_totals": true,
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "manual_total_episode": false,
+          "note": []
+        }
+      },
+      "stages": {
+        "effective_total": {
+          "input": {
+            "subscribe": {
+              "type": "电视剧",
+              "season": 1,
+              "start_episode": 1,
+              "total_episode": 3,
+              "manual_total_episode": false,
+              "note": []
+            },
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            }
+          },
+          "expected": 3
+        },
+        "library_missing": {
+          "input": {
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            },
+            "totals": {
+              "1": 3
+            },
+            "library_seasons": {
+              "2": [
+                9
+              ]
+            }
+          },
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "whole_season"
+          },
+          "library_calls": 1,
+          "recognition_calls": 0
+        },
+        "subscription_missing": {
+          "input": {
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "mediakey": "tmdb:123",
+            "begin_season": 1,
+            "total_episode": 3,
+            "start_episode": 1,
+            "downloaded_episodes": []
+          },
+          "skipped": false,
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "whole_season"
+          }
+        }
+      },
+      "expected": {
+        "satisfied": false,
+        "no_exists": {
+          "tmdb:123": {
+            "1": {
+              "season": 1,
+              "episodes": [],
+              "total_episode": 3,
+              "start_episode": 1,
+              "require_complete_coverage": false
+            }
+          }
+        },
+        "shape": "whole_season"
+      }
+    },
+    {
+      "name": "same_season_outside_produces_explicit_full_range",
+      "compatibility": "native_count_expansion",
+      "input": {
+        "metadata_seasons": {
+          "1": [
+            1,
+            2,
+            3
+          ]
+        },
+        "recognized_seasons": null,
+        "library_seasons": {
+          "1": [
+            9
+          ]
+        },
+        "pass_totals": true,
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "manual_total_episode": false,
+          "note": []
+        }
+      },
+      "stages": {
+        "effective_total": {
+          "input": {
+            "subscribe": {
+              "type": "电视剧",
+              "season": 1,
+              "start_episode": 1,
+              "total_episode": 3,
+              "manual_total_episode": false,
+              "note": []
+            },
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            }
+          },
+          "expected": 3
+        },
+        "library_missing": {
+          "input": {
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            },
+            "totals": {
+              "1": 3
+            },
+            "library_seasons": {
+              "1": [
+                9
+              ]
+            }
+          },
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "explicit_episodes"
+          },
+          "library_calls": 1,
+          "recognition_calls": 0
+        },
+        "subscription_missing": {
+          "input": {
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "mediakey": "tmdb:123",
+            "begin_season": 1,
+            "total_episode": 3,
+            "start_episode": 1,
+            "downloaded_episodes": []
+          },
+          "skipped": false,
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "explicit_episodes"
+          }
+        }
+      },
+      "expected": {
+        "satisfied": false,
+        "no_exists": {
+          "tmdb:123": {
+            "1": {
+              "season": 1,
+              "episodes": [
+                1,
+                2,
+                3
+              ],
+              "total_episode": 3,
+              "start_episode": 1,
+              "require_complete_coverage": false
+            }
+          }
+        },
+        "shape": "explicit_episodes"
+      }
+    },
+    {
+      "name": "nonempty_outside_note_materializes_full_range",
+      "compatibility": "native_count_expansion",
+      "input": {
+        "metadata_seasons": {
+          "1": [
+            1,
+            2,
+            3
+          ]
+        },
+        "recognized_seasons": null,
+        "library_seasons": null,
+        "pass_totals": true,
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "manual_total_episode": false,
+          "note": [
+            9
+          ]
+        }
+      },
+      "stages": {
+        "effective_total": {
+          "input": {
+            "subscribe": {
+              "type": "电视剧",
+              "season": 1,
+              "start_episode": 1,
+              "total_episode": 3,
+              "manual_total_episode": false,
+              "note": [
+                9
+              ]
+            },
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            }
+          },
+          "expected": 3
+        },
+        "library_missing": {
+          "input": {
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            },
+            "totals": {
+              "1": 3
+            },
+            "library_seasons": null
+          },
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "whole_season"
+          },
+          "library_calls": 1,
+          "recognition_calls": 0
+        },
+        "subscription_missing": {
+          "input": {
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "mediakey": "tmdb:123",
+            "begin_season": 1,
+            "total_episode": 3,
+            "start_episode": 1,
+            "downloaded_episodes": [
+              9
+            ]
+          },
+          "skipped": false,
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "explicit_episodes"
+          }
+        }
+      },
+      "expected": {
+        "satisfied": false,
+        "no_exists": {
+          "tmdb:123": {
+            "1": {
+              "season": 1,
+              "episodes": [
+                1,
+                2,
+                3
+              ],
+              "total_episode": 3,
+              "start_episode": 1,
+              "require_complete_coverage": false
+            }
+          }
+        },
+        "shape": "explicit_episodes"
+      }
+    },
+    {
+      "name": "zero_note_materializes_full_range",
+      "compatibility": "native_count_expansion",
+      "input": {
+        "metadata_seasons": {
+          "1": [
+            1,
+            2,
+            3
+          ]
+        },
+        "recognized_seasons": null,
+        "library_seasons": null,
+        "pass_totals": true,
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "manual_total_episode": false,
+          "note": [
+            0
+          ]
+        }
+      },
+      "stages": {
+        "effective_total": {
+          "input": {
+            "subscribe": {
+              "type": "电视剧",
+              "season": 1,
+              "start_episode": 1,
+              "total_episode": 3,
+              "manual_total_episode": false,
+              "note": [
+                0
+              ]
+            },
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            }
+          },
+          "expected": 3
+        },
+        "library_missing": {
+          "input": {
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            },
+            "totals": {
+              "1": 3
+            },
+            "library_seasons": null
+          },
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "whole_season"
+          },
+          "library_calls": 1,
+          "recognition_calls": 0
+        },
+        "subscription_missing": {
+          "input": {
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "mediakey": "tmdb:123",
+            "begin_season": 1,
+            "total_episode": 3,
+            "start_episode": 1,
+            "downloaded_episodes": [
+              0
+            ]
+          },
+          "skipped": false,
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "explicit_episodes"
+          }
+        }
+      },
+      "expected": {
+        "satisfied": false,
+        "no_exists": {
+          "tmdb:123": {
+            "1": {
+              "season": 1,
+              "episodes": [
+                1,
+                2,
+                3
+              ],
+              "total_episode": 3,
+              "start_episode": 1,
+              "require_complete_coverage": false
+            }
+          }
+        },
+        "shape": "explicit_episodes"
+      }
+    },
+    {
+      "name": "negative_note_materializes_full_range",
+      "compatibility": "native_count_expansion",
+      "input": {
+        "metadata_seasons": {
+          "1": [
+            1,
+            2,
+            3
+          ]
+        },
+        "recognized_seasons": null,
+        "library_seasons": null,
+        "pass_totals": true,
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "manual_total_episode": false,
+          "note": [
+            -1
+          ]
+        }
+      },
+      "stages": {
+        "effective_total": {
+          "input": {
+            "subscribe": {
+              "type": "电视剧",
+              "season": 1,
+              "start_episode": 1,
+              "total_episode": 3,
+              "manual_total_episode": false,
+              "note": [
+                -1
+              ]
+            },
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            }
+          },
+          "expected": 3
+        },
+        "library_missing": {
+          "input": {
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            },
+            "totals": {
+              "1": 3
+            },
+            "library_seasons": null
+          },
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "whole_season"
+          },
+          "library_calls": 1,
+          "recognition_calls": 0
+        },
+        "subscription_missing": {
+          "input": {
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "mediakey": "tmdb:123",
+            "begin_season": 1,
+            "total_episode": 3,
+            "start_episode": 1,
+            "downloaded_episodes": [
+              -1
+            ]
+          },
+          "skipped": false,
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "explicit_episodes"
+          }
+        }
+      },
+      "expected": {
+        "satisfied": false,
+        "no_exists": {
+          "tmdb:123": {
+            "1": {
+              "season": 1,
+              "episodes": [
+                1,
+                2,
+                3
+              ],
+              "total_episode": 3,
+              "start_episode": 1,
+              "require_complete_coverage": false
+            }
+          }
+        },
+        "shape": "explicit_episodes"
+      }
+    },
+    {
+      "name": "above_go_episode_limit_note_materializes_full_range",
+      "compatibility": "native_count_expansion",
+      "input": {
+        "metadata_seasons": {
+          "1": [
+            1,
+            2,
+            3
+          ]
+        },
+        "recognized_seasons": null,
+        "library_seasons": null,
+        "pass_totals": true,
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "manual_total_episode": false,
+          "note": [
+            5001
+          ]
+        }
+      },
+      "stages": {
+        "effective_total": {
+          "input": {
+            "subscribe": {
+              "type": "电视剧",
+              "season": 1,
+              "start_episode": 1,
+              "total_episode": 3,
+              "manual_total_episode": false,
+              "note": [
+                5001
+              ]
+            },
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            }
+          },
+          "expected": 3
+        },
+        "library_missing": {
+          "input": {
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            },
+            "totals": {
+              "1": 3
+            },
+            "library_seasons": null
+          },
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "whole_season"
+          },
+          "library_calls": 1,
+          "recognition_calls": 0
+        },
+        "subscription_missing": {
+          "input": {
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "mediakey": "tmdb:123",
+            "begin_season": 1,
+            "total_episode": 3,
+            "start_episode": 1,
+            "downloaded_episodes": [
+              5001
+            ]
+          },
+          "skipped": false,
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "explicit_episodes"
+          }
+        }
+      },
+      "expected": {
+        "satisfied": false,
+        "no_exists": {
+          "tmdb:123": {
+            "1": {
+              "season": 1,
+              "episodes": [
+                1,
+                2,
+                3
+              ],
+              "total_episode": 3,
+              "start_episode": 1,
+              "require_complete_coverage": false
+            }
+          }
+        },
+        "shape": "explicit_episodes"
+      }
+    },
+    {
+      "name": "inside_note_materializes_remaining_range",
+      "compatibility": "native_count_expansion",
+      "input": {
+        "metadata_seasons": {
+          "1": [
+            1,
+            2,
+            3
+          ]
+        },
+        "recognized_seasons": null,
+        "library_seasons": null,
+        "pass_totals": true,
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "manual_total_episode": false,
+          "note": [
+            2
+          ]
+        }
+      },
+      "stages": {
+        "effective_total": {
+          "input": {
+            "subscribe": {
+              "type": "电视剧",
+              "season": 1,
+              "start_episode": 1,
+              "total_episode": 3,
+              "manual_total_episode": false,
+              "note": [
+                2
+              ]
+            },
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            }
+          },
+          "expected": 3
+        },
+        "library_missing": {
+          "input": {
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            },
+            "totals": {
+              "1": 3
+            },
+            "library_seasons": null
+          },
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "whole_season"
+          },
+          "library_calls": 1,
+          "recognition_calls": 0
+        },
+        "subscription_missing": {
+          "input": {
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "mediakey": "tmdb:123",
+            "begin_season": 1,
+            "total_episode": 3,
+            "start_episode": 1,
+            "downloaded_episodes": [
+              2
+            ]
+          },
+          "skipped": false,
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [
+                    1,
+                    3
+                  ],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "explicit_episodes"
+          }
+        }
+      },
+      "expected": {
+        "satisfied": false,
+        "no_exists": {
+          "tmdb:123": {
+            "1": {
+              "season": 1,
+              "episodes": [
+                1,
+                3
+              ],
+              "total_episode": 3,
+              "start_episode": 1,
+              "require_complete_coverage": false
+            }
+          }
+        },
+        "shape": "explicit_episodes"
+      }
+    },
+    {
+      "name": "start_after_original_materializes_trimmed_range",
+      "compatibility": "native_count_expansion",
+      "input": {
+        "metadata_seasons": {
+          "1": [
+            1,
+            2,
+            3
+          ]
+        },
+        "recognized_seasons": null,
+        "library_seasons": null,
+        "pass_totals": true,
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 2,
+          "total_episode": 3,
+          "manual_total_episode": false,
+          "note": []
+        }
+      },
+      "stages": {
+        "effective_total": {
+          "input": {
+            "subscribe": {
+              "type": "电视剧",
+              "season": 1,
+              "start_episode": 2,
+              "total_episode": 3,
+              "manual_total_episode": false,
+              "note": []
+            },
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            }
+          },
+          "expected": 3
+        },
+        "library_missing": {
+          "input": {
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            },
+            "totals": {
+              "1": 3
+            },
+            "library_seasons": null
+          },
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "whole_season"
+          },
+          "library_calls": 1,
+          "recognition_calls": 0
+        },
+        "subscription_missing": {
+          "input": {
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "mediakey": "tmdb:123",
+            "begin_season": 1,
+            "total_episode": 3,
+            "start_episode": 2,
+            "downloaded_episodes": []
+          },
+          "skipped": false,
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [
+                    2,
+                    3
+                  ],
+                  "total_episode": 3,
+                  "start_episode": 2,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "explicit_episodes"
+          }
+        }
+      },
+      "expected": {
+        "satisfied": false,
+        "no_exists": {
+          "tmdb:123": {
+            "1": {
+              "season": 1,
+              "episodes": [
+                2,
+                3
+              ],
+              "total_episode": 3,
+              "start_episode": 2,
+              "require_complete_coverage": false
+            }
+          }
+        },
+        "shape": "explicit_episodes"
+      }
+    },
+    {
+      "name": "partial_library_preserves_explicit_episodes",
+      "compatibility": "native_count_expansion",
+      "input": {
+        "metadata_seasons": {
+          "1": [
+            1,
+            2,
+            3
+          ]
+        },
+        "recognized_seasons": null,
+        "library_seasons": {
+          "1": [
+            1
+          ]
+        },
+        "pass_totals": true,
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "manual_total_episode": false,
+          "note": []
+        }
+      },
+      "stages": {
+        "effective_total": {
+          "input": {
+            "subscribe": {
+              "type": "电视剧",
+              "season": 1,
+              "start_episode": 1,
+              "total_episode": 3,
+              "manual_total_episode": false,
+              "note": []
+            },
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            }
+          },
+          "expected": 3
+        },
+        "library_missing": {
+          "input": {
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            },
+            "totals": {
+              "1": 3
+            },
+            "library_seasons": {
+              "1": [
+                1
+              ]
+            }
+          },
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [
+                    2,
+                    3
+                  ],
+                  "total_episode": 3,
+                  "start_episode": 2,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "explicit_episodes"
+          },
+          "library_calls": 1,
+          "recognition_calls": 0
+        },
+        "subscription_missing": {
+          "input": {
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [
+                    2,
+                    3
+                  ],
+                  "total_episode": 3,
+                  "start_episode": 2,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "mediakey": "tmdb:123",
+            "begin_season": 1,
+            "total_episode": 3,
+            "start_episode": 1,
+            "downloaded_episodes": []
+          },
+          "skipped": false,
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [
+                    2,
+                    3
+                  ],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "explicit_episodes"
+          }
+        }
+      },
+      "expected": {
+        "satisfied": false,
+        "no_exists": {
+          "tmdb:123": {
+            "1": {
+              "season": 1,
+              "episodes": [
+                2,
+                3
+              ],
+              "total_episode": 3,
+              "start_episode": 1,
+              "require_complete_coverage": false
+            }
+          }
+        },
+        "shape": "explicit_episodes"
+      }
+    },
+    {
+      "name": "library_and_note_combine",
+      "compatibility": "native_count_expansion",
+      "input": {
+        "metadata_seasons": {
+          "1": [
+            1,
+            2,
+            3
+          ]
+        },
+        "recognized_seasons": null,
+        "library_seasons": {
+          "1": [
+            1
+          ]
+        },
+        "pass_totals": true,
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "manual_total_episode": false,
+          "note": [
+            2
+          ]
+        }
+      },
+      "stages": {
+        "effective_total": {
+          "input": {
+            "subscribe": {
+              "type": "电视剧",
+              "season": 1,
+              "start_episode": 1,
+              "total_episode": 3,
+              "manual_total_episode": false,
+              "note": [
+                2
+              ]
+            },
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            }
+          },
+          "expected": 3
+        },
+        "library_missing": {
+          "input": {
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            },
+            "totals": {
+              "1": 3
+            },
+            "library_seasons": {
+              "1": [
+                1
+              ]
+            }
+          },
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [
+                    2,
+                    3
+                  ],
+                  "total_episode": 3,
+                  "start_episode": 2,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "explicit_episodes"
+          },
+          "library_calls": 1,
+          "recognition_calls": 0
+        },
+        "subscription_missing": {
+          "input": {
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [
+                    2,
+                    3
+                  ],
+                  "total_episode": 3,
+                  "start_episode": 2,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "mediakey": "tmdb:123",
+            "begin_season": 1,
+            "total_episode": 3,
+            "start_episode": 1,
+            "downloaded_episodes": [
+              2
+            ]
+          },
+          "skipped": false,
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [
+                    3
+                  ],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "explicit_episodes"
+          }
+        }
+      },
+      "expected": {
+        "satisfied": false,
+        "no_exists": {
+          "tmdb:123": {
+            "1": {
+              "season": 1,
+              "episodes": [
+                3
+              ],
+              "total_episode": 3,
+              "start_episode": 1,
+              "require_complete_coverage": false
+            }
+          }
+        },
+        "shape": "explicit_episodes"
+      }
+    },
+    {
+      "name": "all_library_episodes_satisfy_target",
+      "compatibility": "native_count_expansion",
+      "input": {
+        "metadata_seasons": {
+          "1": [
+            1,
+            2,
+            3
+          ]
+        },
+        "recognized_seasons": null,
+        "library_seasons": {
+          "1": [
+            1,
+            2,
+            3
+          ]
+        },
+        "pass_totals": true,
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "manual_total_episode": false,
+          "note": []
+        }
+      },
+      "stages": {
+        "effective_total": {
+          "input": {
+            "subscribe": {
+              "type": "电视剧",
+              "season": 1,
+              "start_episode": 1,
+              "total_episode": 3,
+              "manual_total_episode": false,
+              "note": []
+            },
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            }
+          },
+          "expected": 3
+        },
+        "library_missing": {
+          "input": {
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            },
+            "totals": {
+              "1": 3
+            },
+            "library_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            }
+          },
+          "expected": {
+            "satisfied": true,
+            "no_exists": {},
+            "shape": "no_missing"
+          },
+          "library_calls": 1,
+          "recognition_calls": 0
+        },
+        "subscription_missing": {
+          "input": {
+            "no_exists": {},
+            "mediakey": "tmdb:123",
+            "begin_season": 1,
+            "total_episode": 3,
+            "start_episode": 1,
+            "downloaded_episodes": []
+          },
+          "skipped": true,
+          "expected": {
+            "satisfied": true,
+            "no_exists": {},
+            "shape": "no_missing"
+          }
+        }
+      },
+      "expected": {
+        "satisfied": true,
+        "no_exists": {},
+        "shape": "no_missing"
+      }
+    },
+    {
+      "name": "all_note_episodes_satisfy_target",
+      "compatibility": "native_count_expansion",
+      "input": {
+        "metadata_seasons": {
+          "1": [
+            1,
+            2,
+            3
+          ]
+        },
+        "recognized_seasons": null,
+        "library_seasons": null,
+        "pass_totals": true,
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "manual_total_episode": false,
+          "note": [
+            1,
+            2,
+            3
+          ]
+        }
+      },
+      "stages": {
+        "effective_total": {
+          "input": {
+            "subscribe": {
+              "type": "电视剧",
+              "season": 1,
+              "start_episode": 1,
+              "total_episode": 3,
+              "manual_total_episode": false,
+              "note": [
+                1,
+                2,
+                3
+              ]
+            },
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            }
+          },
+          "expected": 3
+        },
+        "library_missing": {
+          "input": {
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            },
+            "totals": {
+              "1": 3
+            },
+            "library_seasons": null
+          },
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "whole_season"
+          },
+          "library_calls": 1,
+          "recognition_calls": 0
+        },
+        "subscription_missing": {
+          "input": {
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "mediakey": "tmdb:123",
+            "begin_season": 1,
+            "total_episode": 3,
+            "start_episode": 1,
+            "downloaded_episodes": [
+              1,
+              2,
+              3
+            ]
+          },
+          "skipped": false,
+          "expected": {
+            "satisfied": true,
+            "no_exists": {},
+            "shape": "no_missing"
+          }
+        }
+      },
+      "expected": {
+        "satisfied": true,
+        "no_exists": {},
+        "shape": "no_missing"
+      }
+    },
+    {
+      "name": "start_beyond_total_satisfies_trimmed_target",
+      "compatibility": "native_count_expansion",
+      "input": {
+        "metadata_seasons": {
+          "1": [
+            1,
+            2,
+            3
+          ]
+        },
+        "recognized_seasons": null,
+        "library_seasons": null,
+        "pass_totals": true,
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 4,
+          "total_episode": 3,
+          "manual_total_episode": false,
+          "note": []
+        }
+      },
+      "stages": {
+        "effective_total": {
+          "input": {
+            "subscribe": {
+              "type": "电视剧",
+              "season": 1,
+              "start_episode": 4,
+              "total_episode": 3,
+              "manual_total_episode": false,
+              "note": []
+            },
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            }
+          },
+          "expected": 3
+        },
+        "library_missing": {
+          "input": {
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            },
+            "totals": {
+              "1": 3
+            },
+            "library_seasons": null
+          },
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "whole_season"
+          },
+          "library_calls": 1,
+          "recognition_calls": 0
+        },
+        "subscription_missing": {
+          "input": {
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "mediakey": "tmdb:123",
+            "begin_season": 1,
+            "total_episode": 3,
+            "start_episode": 4,
+            "downloaded_episodes": []
+          },
+          "skipped": false,
+          "expected": {
+            "satisfied": true,
+            "no_exists": {},
+            "shape": "no_missing"
+          }
+        }
+      },
+      "expected": {
+        "satisfied": true,
+        "no_exists": {},
+        "shape": "no_missing"
+      }
+    },
+    {
+      "name": "partial_missing_outside_subscription_satisfies_target",
+      "compatibility": "native_count_expansion",
+      "input": {
+        "metadata_seasons": {
+          "1": [
+            1,
+            2,
+            3
+          ]
+        },
+        "recognized_seasons": null,
+        "library_seasons": {
+          "1": [
+            1,
+            2
+          ]
+        },
+        "pass_totals": false,
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 2,
+          "manual_total_episode": true,
+          "note": []
+        }
+      },
+      "stages": {
+        "effective_total": {
+          "input": {
+            "subscribe": {
+              "type": "电视剧",
+              "season": 1,
+              "start_episode": 1,
+              "total_episode": 2,
+              "manual_total_episode": true,
+              "note": []
+            },
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            }
+          },
+          "expected": 2
+        },
+        "library_missing": {
+          "input": {
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            },
+            "totals": {},
+            "library_seasons": {
+              "1": [
+                1,
+                2
+              ]
+            }
+          },
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [
+                    3
+                  ],
+                  "total_episode": 3,
+                  "start_episode": 3,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "explicit_episodes"
+          },
+          "library_calls": 1,
+          "recognition_calls": 0
+        },
+        "subscription_missing": {
+          "input": {
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [
+                    3
+                  ],
+                  "total_episode": 3,
+                  "start_episode": 3,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "mediakey": "tmdb:123",
+            "begin_season": 1,
+            "total_episode": 2,
+            "start_episode": 1,
+            "downloaded_episodes": []
+          },
+          "skipped": false,
+          "expected": {
+            "satisfied": true,
+            "no_exists": {},
+            "shape": "no_missing"
+          }
+        }
+      },
+      "expected": {
+        "satisfied": true,
+        "no_exists": {},
+        "shape": "no_missing"
+      }
+    },
+    {
+      "name": "natural_two_equal_start_preserves_whole_season",
+      "compatibility": "synthetic_metadata_numbers",
+      "input": {
+        "metadata_seasons": {
+          "1": [
+            2,
+            3,
+            4
+          ]
+        },
+        "recognized_seasons": null,
+        "library_seasons": null,
+        "pass_totals": true,
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 2,
+          "total_episode": 3,
+          "manual_total_episode": false,
+          "note": []
+        }
+      },
+      "stages": {
+        "effective_total": {
+          "input": {
+            "subscribe": {
+              "type": "电视剧",
+              "season": 1,
+              "start_episode": 2,
+              "total_episode": 3,
+              "manual_total_episode": false,
+              "note": []
+            },
+            "metadata_seasons": {
+              "1": [
+                2,
+                3,
+                4
+              ]
+            }
+          },
+          "expected": 3
+        },
+        "library_missing": {
+          "input": {
+            "metadata_seasons": {
+              "1": [
+                2,
+                3,
+                4
+              ]
+            },
+            "totals": {
+              "1": 3
+            },
+            "library_seasons": null
+          },
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 2,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "whole_season"
+          },
+          "library_calls": 1,
+          "recognition_calls": 0
+        },
+        "subscription_missing": {
+          "input": {
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 2,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "mediakey": "tmdb:123",
+            "begin_season": 1,
+            "total_episode": 3,
+            "start_episode": 2,
+            "downloaded_episodes": []
+          },
+          "skipped": false,
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 2,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "whole_season"
+          }
+        }
+      },
+      "expected": {
+        "satisfied": false,
+        "no_exists": {
+          "tmdb:123": {
+            "1": {
+              "season": 1,
+              "episodes": [],
+              "total_episode": 3,
+              "start_episode": 2,
+              "require_complete_coverage": false
+            }
+          }
+        },
+        "shape": "whole_season"
+      }
+    },
+    {
+      "name": "natural_two_outside_note_materializes_two_to_total",
+      "compatibility": "synthetic_metadata_numbers",
+      "input": {
+        "metadata_seasons": {
+          "1": [
+            2,
+            3,
+            4
+          ]
+        },
+        "recognized_seasons": null,
+        "library_seasons": null,
+        "pass_totals": true,
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 2,
+          "total_episode": 3,
+          "manual_total_episode": false,
+          "note": [
+            9
+          ]
+        }
+      },
+      "stages": {
+        "effective_total": {
+          "input": {
+            "subscribe": {
+              "type": "电视剧",
+              "season": 1,
+              "start_episode": 2,
+              "total_episode": 3,
+              "manual_total_episode": false,
+              "note": [
+                9
+              ]
+            },
+            "metadata_seasons": {
+              "1": [
+                2,
+                3,
+                4
+              ]
+            }
+          },
+          "expected": 3
+        },
+        "library_missing": {
+          "input": {
+            "metadata_seasons": {
+              "1": [
+                2,
+                3,
+                4
+              ]
+            },
+            "totals": {
+              "1": 3
+            },
+            "library_seasons": null
+          },
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 2,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "whole_season"
+          },
+          "library_calls": 1,
+          "recognition_calls": 0
+        },
+        "subscription_missing": {
+          "input": {
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 2,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "mediakey": "tmdb:123",
+            "begin_season": 1,
+            "total_episode": 3,
+            "start_episode": 2,
+            "downloaded_episodes": [
+              9
+            ]
+          },
+          "skipped": false,
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [
+                    2,
+                    3
+                  ],
+                  "total_episode": 3,
+                  "start_episode": 2,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "explicit_episodes"
+          }
+        }
+      },
+      "expected": {
+        "satisfied": false,
+        "no_exists": {
+          "tmdb:123": {
+            "1": {
+              "season": 1,
+              "episodes": [
+                2,
+                3
+              ],
+              "total_episode": 3,
+              "start_episode": 2,
+              "require_complete_coverage": false
+            }
+          }
+        },
+        "shape": "explicit_episodes"
+      }
+    },
+    {
+      "name": "natural_two_same_season_outside_clips_library_range",
+      "compatibility": "synthetic_metadata_numbers",
+      "input": {
+        "metadata_seasons": {
+          "1": [
+            2,
+            3,
+            4
+          ]
+        },
+        "recognized_seasons": null,
+        "library_seasons": {
+          "1": [
+            9
+          ]
+        },
+        "pass_totals": true,
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 2,
+          "total_episode": 3,
+          "manual_total_episode": false,
+          "note": []
+        }
+      },
+      "stages": {
+        "effective_total": {
+          "input": {
+            "subscribe": {
+              "type": "电视剧",
+              "season": 1,
+              "start_episode": 2,
+              "total_episode": 3,
+              "manual_total_episode": false,
+              "note": []
+            },
+            "metadata_seasons": {
+              "1": [
+                2,
+                3,
+                4
+              ]
+            }
+          },
+          "expected": 3
+        },
+        "library_missing": {
+          "input": {
+            "metadata_seasons": {
+              "1": [
+                2,
+                3,
+                4
+              ]
+            },
+            "totals": {
+              "1": 3
+            },
+            "library_seasons": {
+              "1": [
+                9
+              ]
+            }
+          },
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [
+                    2,
+                    3,
+                    4
+                  ],
+                  "total_episode": 3,
+                  "start_episode": 2,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "explicit_episodes"
+          },
+          "library_calls": 1,
+          "recognition_calls": 0
+        },
+        "subscription_missing": {
+          "input": {
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [
+                    2,
+                    3,
+                    4
+                  ],
+                  "total_episode": 3,
+                  "start_episode": 2,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "mediakey": "tmdb:123",
+            "begin_season": 1,
+            "total_episode": 3,
+            "start_episode": 2,
+            "downloaded_episodes": []
+          },
+          "skipped": false,
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [
+                    2,
+                    3
+                  ],
+                  "total_episode": 3,
+                  "start_episode": 2,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "explicit_episodes"
+          }
+        }
+      },
+      "expected": {
+        "satisfied": false,
+        "no_exists": {
+          "tmdb:123": {
+            "1": {
+              "season": 1,
+              "episodes": [
+                2,
+                3
+              ],
+              "total_episode": 3,
+              "start_episode": 2,
+              "require_complete_coverage": false
+            }
+          }
+        },
+        "shape": "explicit_episodes"
+      }
+    },
+    {
+      "name": "natural_two_start_after_original_materializes_trimmed_range",
+      "compatibility": "synthetic_metadata_numbers",
+      "input": {
+        "metadata_seasons": {
+          "1": [
+            2,
+            3,
+            4
+          ]
+        },
+        "recognized_seasons": null,
+        "library_seasons": null,
+        "pass_totals": true,
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 3,
+          "total_episode": 3,
+          "manual_total_episode": false,
+          "note": []
+        }
+      },
+      "stages": {
+        "effective_total": {
+          "input": {
+            "subscribe": {
+              "type": "电视剧",
+              "season": 1,
+              "start_episode": 3,
+              "total_episode": 3,
+              "manual_total_episode": false,
+              "note": []
+            },
+            "metadata_seasons": {
+              "1": [
+                2,
+                3,
+                4
+              ]
+            }
+          },
+          "expected": 3
+        },
+        "library_missing": {
+          "input": {
+            "metadata_seasons": {
+              "1": [
+                2,
+                3,
+                4
+              ]
+            },
+            "totals": {
+              "1": 3
+            },
+            "library_seasons": null
+          },
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 2,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "whole_season"
+          },
+          "library_calls": 1,
+          "recognition_calls": 0
+        },
+        "subscription_missing": {
+          "input": {
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 2,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "mediakey": "tmdb:123",
+            "begin_season": 1,
+            "total_episode": 3,
+            "start_episode": 3,
+            "downloaded_episodes": []
+          },
+          "skipped": false,
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [
+                    3
+                  ],
+                  "total_episode": 3,
+                  "start_episode": 3,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "explicit_episodes"
+          }
+        }
+      },
+      "expected": {
+        "satisfied": false,
+        "no_exists": {
+          "tmdb:123": {
+            "1": {
+              "season": 1,
+              "episodes": [
+                3
+              ],
+              "total_episode": 3,
+              "start_episode": 3,
+              "require_complete_coverage": false
+            }
+          }
+        },
+        "shape": "explicit_episodes"
+      }
+    },
+    {
+      "name": "metadata_gaps_without_library_preserve_whole_season",
+      "compatibility": "synthetic_metadata_numbers",
+      "input": {
+        "metadata_seasons": {
+          "1": [
+            1,
+            3,
+            5
+          ]
+        },
+        "recognized_seasons": null,
+        "library_seasons": null,
+        "pass_totals": true,
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "manual_total_episode": false,
+          "note": []
+        }
+      },
+      "stages": {
+        "effective_total": {
+          "input": {
+            "subscribe": {
+              "type": "电视剧",
+              "season": 1,
+              "start_episode": 1,
+              "total_episode": 3,
+              "manual_total_episode": false,
+              "note": []
+            },
+            "metadata_seasons": {
+              "1": [
+                1,
+                3,
+                5
+              ]
+            }
+          },
+          "expected": 3
+        },
+        "library_missing": {
+          "input": {
+            "metadata_seasons": {
+              "1": [
+                1,
+                3,
+                5
+              ]
+            },
+            "totals": {
+              "1": 3
+            },
+            "library_seasons": null
+          },
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "whole_season"
+          },
+          "library_calls": 1,
+          "recognition_calls": 0
+        },
+        "subscription_missing": {
+          "input": {
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "mediakey": "tmdb:123",
+            "begin_season": 1,
+            "total_episode": 3,
+            "start_episode": 1,
+            "downloaded_episodes": []
+          },
+          "skipped": false,
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "whole_season"
+          }
+        }
+      },
+      "expected": {
+        "satisfied": false,
+        "no_exists": {
+          "tmdb:123": {
+            "1": {
+              "season": 1,
+              "episodes": [],
+              "total_episode": 3,
+              "start_episode": 1,
+              "require_complete_coverage": false
+            }
+          }
+        },
+        "shape": "whole_season"
+      }
+    },
+    {
+      "name": "metadata_gaps_with_totals_use_contiguous_library_range",
+      "compatibility": "synthetic_metadata_numbers",
+      "input": {
+        "metadata_seasons": {
+          "1": [
+            1,
+            3,
+            5
+          ]
+        },
+        "recognized_seasons": null,
+        "library_seasons": {
+          "1": [
+            1
+          ]
+        },
+        "pass_totals": true,
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "manual_total_episode": false,
+          "note": []
+        }
+      },
+      "stages": {
+        "effective_total": {
+          "input": {
+            "subscribe": {
+              "type": "电视剧",
+              "season": 1,
+              "start_episode": 1,
+              "total_episode": 3,
+              "manual_total_episode": false,
+              "note": []
+            },
+            "metadata_seasons": {
+              "1": [
+                1,
+                3,
+                5
+              ]
+            }
+          },
+          "expected": 3
+        },
+        "library_missing": {
+          "input": {
+            "metadata_seasons": {
+              "1": [
+                1,
+                3,
+                5
+              ]
+            },
+            "totals": {
+              "1": 3
+            },
+            "library_seasons": {
+              "1": [
+                1
+              ]
+            }
+          },
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [
+                    2,
+                    3
+                  ],
+                  "total_episode": 3,
+                  "start_episode": 2,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "explicit_episodes"
+          },
+          "library_calls": 1,
+          "recognition_calls": 0
+        },
+        "subscription_missing": {
+          "input": {
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [
+                    2,
+                    3
+                  ],
+                  "total_episode": 3,
+                  "start_episode": 2,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "mediakey": "tmdb:123",
+            "begin_season": 1,
+            "total_episode": 3,
+            "start_episode": 1,
+            "downloaded_episodes": []
+          },
+          "skipped": false,
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [
+                    2,
+                    3
+                  ],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "explicit_episodes"
+          }
+        }
+      },
+      "expected": {
+        "satisfied": false,
+        "no_exists": {
+          "tmdb:123": {
+            "1": {
+              "season": 1,
+              "episodes": [
+                2,
+                3
+              ],
+              "total_episode": 3,
+              "start_episode": 1,
+              "require_complete_coverage": false
+            }
+          }
+        },
+        "shape": "explicit_episodes"
+      }
+    },
+    {
+      "name": "metadata_gaps_without_totals_use_metadata_then_clip",
+      "compatibility": "synthetic_metadata_numbers",
+      "input": {
+        "metadata_seasons": {
+          "1": [
+            1,
+            3,
+            5
+          ]
+        },
+        "recognized_seasons": null,
+        "library_seasons": {
+          "1": [
+            1
+          ]
+        },
+        "pass_totals": false,
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "manual_total_episode": false,
+          "note": []
+        }
+      },
+      "stages": {
+        "effective_total": {
+          "input": {
+            "subscribe": {
+              "type": "电视剧",
+              "season": 1,
+              "start_episode": 1,
+              "total_episode": 3,
+              "manual_total_episode": false,
+              "note": []
+            },
+            "metadata_seasons": {
+              "1": [
+                1,
+                3,
+                5
+              ]
+            }
+          },
+          "expected": 3
+        },
+        "library_missing": {
+          "input": {
+            "metadata_seasons": {
+              "1": [
+                1,
+                3,
+                5
+              ]
+            },
+            "totals": {},
+            "library_seasons": {
+              "1": [
+                1
+              ]
+            }
+          },
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [
+                    3,
+                    5
+                  ],
+                  "total_episode": 3,
+                  "start_episode": 3,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "explicit_episodes"
+          },
+          "library_calls": 1,
+          "recognition_calls": 0
+        },
+        "subscription_missing": {
+          "input": {
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [
+                    3,
+                    5
+                  ],
+                  "total_episode": 3,
+                  "start_episode": 3,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "mediakey": "tmdb:123",
+            "begin_season": 1,
+            "total_episode": 3,
+            "start_episode": 1,
+            "downloaded_episodes": []
+          },
+          "skipped": false,
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [
+                    3
+                  ],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "explicit_episodes"
+          }
+        }
+      },
+      "expected": {
+        "satisfied": false,
+        "no_exists": {
+          "tmdb:123": {
+            "1": {
+              "season": 1,
+              "episodes": [
+                3
+              ],
+              "total_episode": 3,
+              "start_episode": 1,
+              "require_complete_coverage": false
+            }
+          }
+        },
+        "shape": "explicit_episodes"
+      }
+    },
+    {
+      "name": "automatic_total_grows_to_metadata_count",
+      "compatibility": "native_count_expansion",
+      "input": {
+        "metadata_seasons": {
+          "1": [
+            1,
+            2,
+            3,
+            4
+          ]
+        },
+        "recognized_seasons": null,
+        "library_seasons": null,
+        "pass_totals": true,
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "manual_total_episode": false,
+          "note": []
+        }
+      },
+      "stages": {
+        "effective_total": {
+          "input": {
+            "subscribe": {
+              "type": "电视剧",
+              "season": 1,
+              "start_episode": 1,
+              "total_episode": 3,
+              "manual_total_episode": false,
+              "note": []
+            },
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3,
+                4
+              ]
+            }
+          },
+          "expected": 4
+        },
+        "library_missing": {
+          "input": {
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3,
+                4
+              ]
+            },
+            "totals": {
+              "1": 4
+            },
+            "library_seasons": null
+          },
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 4,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "whole_season"
+          },
+          "library_calls": 1,
+          "recognition_calls": 0
+        },
+        "subscription_missing": {
+          "input": {
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 4,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "mediakey": "tmdb:123",
+            "begin_season": 1,
+            "total_episode": 4,
+            "start_episode": 1,
+            "downloaded_episodes": []
+          },
+          "skipped": false,
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 4,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "whole_season"
+          }
+        }
+      },
+      "expected": {
+        "satisfied": false,
+        "no_exists": {
+          "tmdb:123": {
+            "1": {
+              "season": 1,
+              "episodes": [],
+              "total_episode": 4,
+              "start_episode": 1,
+              "require_complete_coverage": false
+            }
+          }
+        },
+        "shape": "whole_season"
+      }
+    },
+    {
+      "name": "manual_total_does_not_grow",
+      "compatibility": "native_count_expansion",
+      "input": {
+        "metadata_seasons": {
+          "1": [
+            1,
+            2,
+            3,
+            4
+          ]
+        },
+        "recognized_seasons": null,
+        "library_seasons": null,
+        "pass_totals": true,
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "manual_total_episode": true,
+          "note": []
+        }
+      },
+      "stages": {
+        "effective_total": {
+          "input": {
+            "subscribe": {
+              "type": "电视剧",
+              "season": 1,
+              "start_episode": 1,
+              "total_episode": 3,
+              "manual_total_episode": true,
+              "note": []
+            },
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3,
+                4
+              ]
+            }
+          },
+          "expected": 3
+        },
+        "library_missing": {
+          "input": {
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3,
+                4
+              ]
+            },
+            "totals": {
+              "1": 3
+            },
+            "library_seasons": null
+          },
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "whole_season"
+          },
+          "library_calls": 1,
+          "recognition_calls": 0
+        },
+        "subscription_missing": {
+          "input": {
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "mediakey": "tmdb:123",
+            "begin_season": 1,
+            "total_episode": 3,
+            "start_episode": 1,
+            "downloaded_episodes": []
+          },
+          "skipped": false,
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "whole_season"
+          }
+        }
+      },
+      "expected": {
+        "satisfied": false,
+        "no_exists": {
+          "tmdb:123": {
+            "1": {
+              "season": 1,
+              "episodes": [],
+              "total_episode": 3,
+              "start_episode": 1,
+              "require_complete_coverage": false
+            }
+          }
+        },
+        "shape": "whole_season"
+      }
+    },
+    {
+      "name": "manual_total_above_metadata_expands_library_range",
+      "compatibility": "native_count_expansion",
+      "input": {
+        "metadata_seasons": {
+          "1": [
+            1,
+            2,
+            3
+          ]
+        },
+        "recognized_seasons": null,
+        "library_seasons": {
+          "1": [
+            1
+          ]
+        },
+        "pass_totals": true,
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 5,
+          "manual_total_episode": true,
+          "note": []
+        }
+      },
+      "stages": {
+        "effective_total": {
+          "input": {
+            "subscribe": {
+              "type": "电视剧",
+              "season": 1,
+              "start_episode": 1,
+              "total_episode": 5,
+              "manual_total_episode": true,
+              "note": []
+            },
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            }
+          },
+          "expected": 5
+        },
+        "library_missing": {
+          "input": {
+            "metadata_seasons": {
+              "1": [
+                1,
+                2,
+                3
+              ]
+            },
+            "totals": {
+              "1": 5
+            },
+            "library_seasons": {
+              "1": [
+                1
+              ]
+            }
+          },
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [
+                    2,
+                    3,
+                    4,
+                    5
+                  ],
+                  "total_episode": 5,
+                  "start_episode": 2,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "explicit_episodes"
+          },
+          "library_calls": 1,
+          "recognition_calls": 0
+        },
+        "subscription_missing": {
+          "input": {
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [
+                    2,
+                    3,
+                    4,
+                    5
+                  ],
+                  "total_episode": 5,
+                  "start_episode": 2,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "mediakey": "tmdb:123",
+            "begin_season": 1,
+            "total_episode": 5,
+            "start_episode": 1,
+            "downloaded_episodes": []
+          },
+          "skipped": false,
+          "expected": {
+            "satisfied": false,
+            "no_exists": {
+              "tmdb:123": {
+                "1": {
+                  "season": 1,
+                  "episodes": [
+                    2,
+                    3,
+                    4,
+                    5
+                  ],
+                  "total_episode": 5,
+                  "start_episode": 1,
+                  "require_complete_coverage": false
+                }
+              }
+            },
+            "shape": "explicit_episodes"
+          }
+        }
+      },
+      "expected": {
+        "satisfied": false,
+        "no_exists": {
+          "tmdb:123": {
+            "1": {
+              "season": 1,
+              "episodes": [
+                2,
+                3,
+                4,
+                5
+              ],
+              "total_episode": 5,
+              "start_episode": 1,
+              "require_complete_coverage": false
+            }
+          }
+        },
+        "shape": "explicit_episodes"
+      }
+    },
+    {
+      "name": "missing_metadata_and_failed_recognition_return_no_missing",
+      "compatibility": "unresolved_metadata",
+      "input": {
+        "metadata_seasons": null,
+        "recognized_seasons": null,
+        "library_seasons": null,
+        "pass_totals": true,
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "manual_total_episode": false,
+          "note": []
+        }
+      },
+      "stages": {
+        "effective_total": {
+          "input": {
+            "subscribe": {
+              "type": "电视剧",
+              "season": 1,
+              "start_episode": 1,
+              "total_episode": 3,
+              "manual_total_episode": false,
+              "note": []
+            },
+            "metadata_seasons": null
+          },
+          "expected": 3
+        },
+        "library_missing": {
+          "input": {
+            "metadata_seasons": null,
+            "totals": {
+              "1": 3
+            },
+            "library_seasons": null
+          },
+          "expected": {
+            "satisfied": false,
+            "no_exists": {},
+            "shape": "no_missing"
+          },
+          "library_calls": 0,
+          "recognition_calls": 1
+        },
+        "subscription_missing": {
+          "input": {
+            "no_exists": {},
+            "mediakey": "tmdb:123",
+            "begin_season": 1,
+            "total_episode": 3,
+            "start_episode": 1,
+            "downloaded_episodes": []
+          },
+          "skipped": false,
+          "expected": {
+            "satisfied": false,
+            "no_exists": {},
+            "shape": "no_missing"
+          }
+        }
+      },
+      "expected": {
+        "satisfied": false,
+        "no_exists": {},
+        "shape": "no_missing"
+      }
+    },
+    {
+      "name": "empty_metadata_and_empty_recognition_return_no_missing",
+      "compatibility": "unresolved_metadata",
+      "input": {
+        "metadata_seasons": {},
+        "recognized_seasons": {},
+        "library_seasons": null,
+        "pass_totals": true,
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "manual_total_episode": false,
+          "note": []
+        }
+      },
+      "stages": {
+        "effective_total": {
+          "input": {
+            "subscribe": {
+              "type": "电视剧",
+              "season": 1,
+              "start_episode": 1,
+              "total_episode": 3,
+              "manual_total_episode": false,
+              "note": []
+            },
+            "metadata_seasons": {}
+          },
+          "expected": 3
+        },
+        "library_missing": {
+          "input": {
+            "metadata_seasons": {},
+            "totals": {
+              "1": 3
+            },
+            "library_seasons": null
+          },
+          "expected": {
+            "satisfied": false,
+            "no_exists": {},
+            "shape": "no_missing"
+          },
+          "library_calls": 0,
+          "recognition_calls": 1
+        },
+        "subscription_missing": {
+          "input": {
+            "no_exists": {},
+            "mediakey": "tmdb:123",
+            "begin_season": 1,
+            "total_episode": 3,
+            "start_episode": 1,
+            "downloaded_episodes": []
+          },
+          "skipped": false,
+          "expected": {
+            "satisfied": false,
+            "no_exists": {},
+            "shape": "no_missing"
+          }
+        }
+      },
+      "expected": {
+        "satisfied": false,
+        "no_exists": {},
+        "shape": "no_missing"
+      }
+    },
+    {
+      "name": "empty_target_metadata_without_library_return_no_missing",
+      "compatibility": "unresolved_metadata",
+      "input": {
+        "metadata_seasons": {
+          "1": []
+        },
+        "recognized_seasons": null,
+        "library_seasons": null,
+        "pass_totals": true,
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "manual_total_episode": false,
+          "note": []
+        }
+      },
+      "stages": {
+        "effective_total": {
+          "input": {
+            "subscribe": {
+              "type": "电视剧",
+              "season": 1,
+              "start_episode": 1,
+              "total_episode": 3,
+              "manual_total_episode": false,
+              "note": []
+            },
+            "metadata_seasons": {
+              "1": []
+            }
+          },
+          "expected": 3
+        },
+        "library_missing": {
+          "input": {
+            "metadata_seasons": {
+              "1": []
+            },
+            "totals": {
+              "1": 3
+            },
+            "library_seasons": null
+          },
+          "expected": {
+            "satisfied": false,
+            "no_exists": {},
+            "shape": "no_missing"
+          },
+          "library_calls": 1,
+          "recognition_calls": 0
+        },
+        "subscription_missing": {
+          "input": {
+            "no_exists": {},
+            "mediakey": "tmdb:123",
+            "begin_season": 1,
+            "total_episode": 3,
+            "start_episode": 1,
+            "downloaded_episodes": []
+          },
+          "skipped": false,
+          "expected": {
+            "satisfied": false,
+            "no_exists": {},
+            "shape": "no_missing"
+          }
+        }
+      },
+      "expected": {
+        "satisfied": false,
+        "no_exists": {},
+        "shape": "no_missing"
+      }
+    },
+    {
+      "name": "empty_target_metadata_with_library_reports_satisfied",
+      "compatibility": "unresolved_metadata",
+      "input": {
+        "metadata_seasons": {
+          "1": []
+        },
+        "recognized_seasons": null,
+        "library_seasons": {
+          "1": [
+            9
+          ]
+        },
+        "pass_totals": true,
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "manual_total_episode": false,
+          "note": []
+        }
+      },
+      "stages": {
+        "effective_total": {
+          "input": {
+            "subscribe": {
+              "type": "电视剧",
+              "season": 1,
+              "start_episode": 1,
+              "total_episode": 3,
+              "manual_total_episode": false,
+              "note": []
+            },
+            "metadata_seasons": {
+              "1": []
+            }
+          },
+          "expected": 3
+        },
+        "library_missing": {
+          "input": {
+            "metadata_seasons": {
+              "1": []
+            },
+            "totals": {
+              "1": 3
+            },
+            "library_seasons": {
+              "1": [
+                9
+              ]
+            }
+          },
+          "expected": {
+            "satisfied": true,
+            "no_exists": {},
+            "shape": "no_missing"
+          },
+          "library_calls": 1,
+          "recognition_calls": 0
+        },
+        "subscription_missing": {
+          "input": {
+            "no_exists": {},
+            "mediakey": "tmdb:123",
+            "begin_season": 1,
+            "total_episode": 3,
+            "start_episode": 1,
+            "downloaded_episodes": []
+          },
+          "skipped": true,
+          "expected": {
+            "satisfied": true,
+            "no_exists": {},
+            "shape": "no_missing"
+          }
+        }
+      },
+      "expected": {
+        "satisfied": true,
+        "no_exists": {},
+        "shape": "no_missing"
+      }
+    }
+  ],
+  "limitations": [
+    "AST 执行冻结原方法；媒体身份、媒体库查询、补充识别、NotExistMediaInfo 构造和日志为离线桩。",
+    "未导入完整 V2 应用；未执行下载、数据库写入、事件、完成状态推进、洗版或元数据服务。",
+    "非空 note 作为普通订阅已下载集数原样传入；使用整数，包含 0、负数和大于 Go 集号上限的范围外值。",
+    "episodes 仅在 JSON 序列化时排序以稳定集合结果；空列表的整季含义保持不变。",
+    "native_count_expansion 使用 1..N；四源原生 mediainfo.seasons 及 episode_group 均按数量展开或枚举重编号为 1..N。",
+    "synthetic_metadata_numbers 的自然非 1 起点与非连续集号仅是合成函数边界，不代表原版四源生产数据或 Go 元数据支持缺口。",
+    "pass_totals=false 单独冻结 DownloadChain 无 totals 的函数分支；普通 resolve_subscribe_missing 有有效总集数时会传 totals。",
+    "unresolved_metadata 的 no_missing 仅表示原方法未返回缺集信息，不等价于 satisfied。",
+    "订阅手工总集数是范围结束值，媒体库 totals 是数量；自然非 1 起点下保留原版阶段差异。"
+  ]
+}

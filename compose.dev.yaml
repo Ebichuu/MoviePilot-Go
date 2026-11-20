@@ -1,0 +1,69 @@
+# 本地开发 / 自用部署覆盖层：显式恢复「本地构建 + 本地前端」的运行方式。
+#
+# 为什么需要它：compose.yaml 按发布策略只接受 Actions 产出的 GHCR digest，
+# 而仓库目前没有远端 Actions 产物，于是整条栈连本地都起不来。
+# 本文件把「发布策略」和「能不能跑」隔离开：
+#   - 发布/交付：仍只用 compose.yaml（镜像必须来自已验证 digest）
+#   - 开发/自用：compose.yaml + 本文件叠加，本地构建
+#
+# 用法（推荐用脚本，省掉一堆必填变量）：
+#   .\scripts\dev\up.ps1
+# 等价手写：
+#   $env:MOVIEPILOT_IMAGE="moviepilot-go:dev"
+#   docker compose -f compose.yaml -f compose.dev.yaml up -d --build
+#
+# 注意：只叠加 volumes 的新增项，不要重复 compose.yaml 里已有的挂载，
+# 避免同一 target 出现重复挂载。
+
+services:
+  moviepilot-go:
+    build:
+      context: .
+      # 用 Dockerfile.dev：与发布 Dockerfile 一致，只是不声明 BuildKit 外部前端。
+      dockerfile: Dockerfile.dev
+    image: moviepilot-go:dev
+    # 开发机若在本机跑代理（如 v2rayN 的 10808），容器内访问 TMDB/豆瓣等外网
+    # 需要通过 host.docker.internal 走宿主代理；不需要时删掉这三行即可。
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      HTTP_PROXY: ${DEV_HTTP_PROXY:-}
+      HTTPS_PROXY: ${DEV_HTTP_PROXY:-}
+      # 容器内部服务必须绕过宿主代理：媒体服务器（emby）走的是标准 HTTP 客户端，
+      # 若被代理接管，请求会因无法解析容器内主机名而返回 502。
+      NO_PROXY: localhost,127.0.0.1,postgres,redis,qbittorrent,emby,embylog,localsite,host.docker.internal,192.168.0.0/16,10.0.0.0/8
+      # TMDB 凭据由宿主机 env 注入（v3 API Key 或 v4 Read Access Token 均可）。
+      MOVIEPILOT_TMDB_TOKEN: ${MOVIEPILOT_TMDB_TOKEN:-}
+      # 刷流开关：目前只是占位开关，开启只会打一条 WARN 说明「刷流未实现」，
+      # 不会注册任何周期任务，也不会创建任何刷流下载。
+      MOVIEPILOT_BRUSH_ENABLED: ${MOVIEPILOT_BRUSH_ENABLED:-false}
+      # RSS 增量扫描节拍（分钟）。默认 30 与 V2 一致；调试时可用
+      # $env:DEV_SUBSCRIBE_RSS_INTERVAL="6" 压短，验证周期任务是否真的在跑。
+      SUBSCRIBE_RSS_INTERVAL: ${DEV_SUBSCRIBE_RSS_INTERVAL:-30}
+      # 本地自建/内网测试站点（如入库联调用的 localsite）需要放开私网地址限制。
+      ALLOW_PRIVATE_SITE_HOSTS: ${DEV_ALLOW_PRIVATE_SITE_HOSTS:-true}
+    volumes:
+      # 直接复用仓库里已经存在的官方前端产物，省掉 Dockerfile 中的下载步骤，
+      # 离线也能启动，并且改前端不需要重建镜像。
+      - ./web/dist:/app/web/dist:ro
+
+  # 本地 qBittorrent：与 moviepilot-go 共享同一个 downloads 目录，
+  # 这样「下载 → 整理入库」才能在容器内看到真实文件（远端 qB 的 /downloads 不可见）。
+  # WebUI 在宿主 8081；首次启动的临时密码见
+  # docker logs moviepilot_go-qbittorrent-1 | Select-String "temporary password"
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:5.0.4
+    environment:
+      PUID: "1000"
+      PGID: "1000"
+      TZ: ${MOVIEPILOT_TIMEZONE:-Asia/Shanghai}
+      WEBUI_PORT: "8080"
+    volumes:
+      - ./config/qbittorrent:/config
+      - ./downloads:/downloads
+    ports:
+      - "8080:8080"
+      # BT 监听端口：6881 被多数 PT 站点黑名单，改用 45678 并做端口映射。
+      - "45678:45678"
+      - "45678:45678/udp"
+    restart: unless-stopped

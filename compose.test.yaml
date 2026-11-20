@@ -1,0 +1,5 @@
+# RETIRED. This file is intentionally invalid so every Compose command fails.
+# Use the Actions-image-only runner: .\integration\compose\run-faults.ps1
+name: moviepilot-go-retired-compose-test
+services: {}
+retired_use_integration_compose_run_faults_ps1: true

@@ -1,0 +1,91 @@
+services:
+  postgres:
+    image: postgres:17.6
+    environment:
+      POSTGRES_DB: moviepilot
+      POSTGRES_USER: moviepilot
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U moviepilot -d moviepilot"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    shm_size: 256mb
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4.5-alpine
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    volumes:
+      - ./deploy/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  config-init:
+    image: alpine:3.22
+    command:
+      - sh
+      - -ec
+      - |
+        chown 65532:65532 /config
+        chmod 0770 /config
+        if [ -e /config/app.env ]; then
+          chown 65532:65532 /config/app.env
+          chmod 0600 /config/app.env
+        fi
+    volumes:
+      - ./config:/config
+    restart: "no"
+
+  moviepilot-go:
+    image: ${MOVIEPILOT_IMAGE:?set MOVIEPILOT_IMAGE to the verified GHCR digest}
+    environment:
+      MOVIEPILOT_ENV: production
+      MOVIEPILOT_HTTP_ADDR: :3000
+      MOVIEPILOT_DATABASE_URL: postgres://moviepilot:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/moviepilot?sslmode=disable
+      MOVIEPILOT_REDIS_URL: redis://redis:6379/0
+      MOVIEPILOT_JWT_SECRET: ${MOVIEPILOT_JWT_SECRET:?set MOVIEPILOT_JWT_SECRET}
+      MOVIEPILOT_RESOURCE_SECRET: ${MOVIEPILOT_RESOURCE_SECRET:?set MOVIEPILOT_RESOURCE_SECRET}
+      MOVIEPILOT_MASTER_KEY: ${MOVIEPILOT_MASTER_KEY:?set MOVIEPILOT_MASTER_KEY}
+      MOVIEPILOT_BOOTSTRAP_USERNAME: ${MOVIEPILOT_BOOTSTRAP_USERNAME:-admin}
+      MOVIEPILOT_BOOTSTRAP_PASSWORD: ${MOVIEPILOT_BOOTSTRAP_PASSWORD:?set MOVIEPILOT_BOOTSTRAP_PASSWORD}
+      # 可选的 API_TOKEN：置空时 V2 的 `*2` 只读接口一律 403。
+      MOVIEPILOT_API_TOKEN: ${MOVIEPILOT_API_TOKEN:-}
+      MOVIEPILOT_FRONTEND_DIR: /app/web/dist
+      CONFIG_DIR: /config
+      APP_DOMAIN: ${APP_DOMAIN:-}
+      MOVIEPILOT_TIMEZONE: ${MOVIEPILOT_TIMEZONE:-Asia/Shanghai}
+      MOVIEPILOT_METADATA_WORKERS: ${MOVIEPILOT_METADATA_WORKERS:-12}
+      MOVIEPILOT_METADATA_TIMEOUT: ${MOVIEPILOT_METADATA_TIMEOUT:-10s}
+      MOVIEPILOT_METADATA_CACHE_TTL: ${MOVIEPILOT_METADATA_CACHE_TTL:-12h}
+      MOVIEPILOT_METADATA_MIN_INTERVAL: ${MOVIEPILOT_METADATA_MIN_INTERVAL:-100ms}
+      MOVIEPILOT_METADATA_MAX_BACKOFF: ${MOVIEPILOT_METADATA_MAX_BACKOFF:-30s}
+      MOVIEPILOT_METADATA_MAX_RESULTS: ${MOVIEPILOT_METADATA_MAX_RESULTS:-20}
+      MOVIEPILOT_TMDB_TOKEN: ${MOVIEPILOT_TMDB_TOKEN:-}
+      MOVIEPILOT_DOUBAN_API_KEY: ${MOVIEPILOT_DOUBAN_API_KEY:-}
+      MOVIEPILOT_DOUBAN_SECRET_KEY: ${MOVIEPILOT_DOUBAN_SECRET_KEY:-}
+      MOVIEPILOT_BANGUMI_TOKEN: ${MOVIEPILOT_BANGUMI_TOKEN:-}
+    depends_on:
+      config-init:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./config:/config
+      - ./media:/media
+      - ./downloads:/downloads
+    restart: unless-stopped
+    stop_grace_period: 90s
+
+volumes:
+  postgres-data:

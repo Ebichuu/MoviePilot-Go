@@ -1,0 +1,547 @@
+{
+  "schema_version": 1,
+  "source": {
+    "path": "baselines\\2026-09-13\\official-v2\\app\\chain\\subscribe.py",
+    "sha256": "acb32d818b2cb8bf8dec3062e1b9155595b2045b8de08aa7db3005f6d48b0f95",
+    "methods": {
+      "__normalize_episode_priority": [
+        143,
+        158
+      ],
+      "__get_episode_priority": [
+        161,
+        181
+      ],
+      "__get_best_version_target_episodes": [
+        191,
+        203
+      ],
+      "__get_downloaded_best_version_episodes": [
+        206,
+        240
+      ],
+      "__get_pending_best_version_episodes_with_priority": [
+        243,
+        260
+      ],
+      "compute_lack_episode": [
+        271,
+        330
+      ],
+      "get_best_version_current_priority": [
+        333,
+        357
+      ],
+      "__is_best_version_complete": [
+        470,
+        486
+      ],
+      "is_best_version_complete": [
+        489,
+        493
+      ],
+      "__is_full_best_version_enabled": [
+        619,
+        627
+      ]
+    }
+  },
+  "normalization": [
+    {
+      "name": "mixed entries",
+      "input": {
+        "2": 100,
+        "3": null,
+        "bad": 90,
+        "5": "80",
+        "6": "9.5"
+      },
+      "expected": {
+        "2": 100,
+        "5": 80
+      }
+    },
+    {
+      "name": "floats truncate",
+      "input": {
+        "1": 90.9,
+        "2": -1.9,
+        "3": true,
+        "4": false
+      },
+      "expected": {
+        "1": 90,
+        "2": -1,
+        "3": 1,
+        "4": 0
+      }
+    },
+    {
+      "name": "integer text",
+      "input": {
+        " +02 ": " 100 ",
+        "-1": "-80",
+        "3": "+90"
+      },
+      "expected": {
+        "2": 100,
+        "-1": -80,
+        "3": 90
+      }
+    },
+    {
+      "name": "underscores and decimal unicode",
+      "input": {
+        "١": "１００",
+        "2": "9_0",
+        "3": "9__0",
+        "4": "_90"
+      },
+      "expected": {
+        "1": 100,
+        "2": 90
+      }
+    },
+    {
+      "name": "non object array",
+      "input": [
+        100,
+        90
+      ],
+      "expected": {}
+    },
+    {
+      "name": "non object scalar",
+      "input": 100,
+      "expected": {}
+    },
+    {
+      "name": "null",
+      "input": null,
+      "expected": {}
+    },
+    {
+      "name": "negative and zero keys retained",
+      "input": {
+        "-1": 90,
+        "0": 100,
+        "3": -1
+      },
+      "expected": {
+        "-1": 90,
+        "0": 100,
+        "3": -1
+      }
+    },
+    {
+      "name": "invalid values dropped",
+      "input": {
+        "1": {},
+        "2": [],
+        "3": "",
+        "4": "1e2"
+      },
+      "expected": {}
+    }
+  ],
+  "facts": [
+    {
+      "name": "per episode own facts win",
+      "input": {
+        "type": "电视剧",
+        "season": 1,
+        "start_episode": 2,
+        "total_episode": 4,
+        "best_version": true,
+        "best_version_full": false,
+        "current_priority": 100,
+        "episode_priority": {
+          "2": 90
+        },
+        "note": []
+      },
+      "expected": {
+        "episode_priority": {
+          "2": 90
+        },
+        "downloaded": [
+          2
+        ],
+        "pending": [
+          2,
+          3,
+          4
+        ],
+        "current_priority": 0,
+        "complete": false,
+        "lack_episode": 2
+      }
+    },
+    {
+      "name": "legacy overall priority",
+      "input": {
+        "type": "电视剧",
+        "season": 1,
+        "start_episode": 1,
+        "total_episode": 3,
+        "best_version": true,
+        "best_version_full": false,
+        "current_priority": 100,
+        "episode_priority": {},
+        "note": []
+      },
+      "expected": {
+        "episode_priority": {
+          "1": 100,
+          "2": 100,
+          "3": 100
+        },
+        "downloaded": [
+          1,
+          2,
+          3
+        ],
+        "pending": [],
+        "current_priority": 100,
+        "complete": true,
+        "lack_episode": 0
+      }
+    },
+    {
+      "name": "full mode never inherits",
+      "input": {
+        "type": "电视剧",
+        "season": 1,
+        "start_episode": 1,
+        "total_episode": 3,
+        "best_version": true,
+        "best_version_full": true,
+        "current_priority": 100,
+        "episode_priority": {},
+        "note": []
+      },
+      "expected": {
+        "episode_priority": {},
+        "downloaded": [],
+        "pending": [
+          1,
+          2,
+          3
+        ],
+        "current_priority": 100,
+        "complete": true,
+        "lack_episode": 3
+      }
+    },
+    {
+      "name": "downloaded low quality is pending",
+      "input": {
+        "type": "电视剧",
+        "season": 1,
+        "start_episode": 1,
+        "total_episode": 3,
+        "best_version": true,
+        "best_version_full": false,
+        "current_priority": null,
+        "episode_priority": {
+          "1": 90,
+          "2": 100
+        },
+        "note": [
+          3
+        ]
+      },
+      "expected": {
+        "episode_priority": {
+          "1": 90,
+          "2": 100
+        },
+        "downloaded": [
+          1,
+          2,
+          3
+        ],
+        "pending": [
+          1,
+          3
+        ],
+        "current_priority": 0,
+        "complete": false,
+        "lack_episode": 0
+      }
+    },
+    {
+      "name": "outside range ignored",
+      "input": {
+        "type": "电视剧",
+        "season": 1,
+        "start_episode": 2,
+        "total_episode": 3,
+        "best_version": true,
+        "best_version_full": false,
+        "current_priority": null,
+        "episode_priority": {
+          "1": 100,
+          "2": 100,
+          "4": 100
+        },
+        "note": [
+          1,
+          3,
+          5
+        ]
+      },
+      "expected": {
+        "episode_priority": {
+          "1": 100,
+          "2": 100,
+          "4": 100
+        },
+        "downloaded": [
+          2,
+          3
+        ],
+        "pending": [
+          3
+        ],
+        "current_priority": 0,
+        "complete": false,
+        "lack_episode": 0
+      }
+    },
+    {
+      "name": "unknown target retains current priority",
+      "input": {
+        "type": "电视剧",
+        "season": 1,
+        "start_episode": 1,
+        "total_episode": 0,
+        "best_version": true,
+        "best_version_full": false,
+        "current_priority": 90,
+        "episode_priority": {},
+        "note": []
+      },
+      "expected": {
+        "episode_priority": {},
+        "downloaded": [],
+        "pending": [],
+        "current_priority": 90,
+        "complete": false,
+        "lack_episode": 0
+      }
+    },
+    {
+      "name": "empty range completion",
+      "input": {
+        "type": "电视剧",
+        "season": 1,
+        "start_episode": 5,
+        "total_episode": 3,
+        "best_version": true,
+        "best_version_full": false,
+        "current_priority": 100,
+        "episode_priority": {},
+        "note": []
+      },
+      "expected": {
+        "episode_priority": {},
+        "downloaded": [],
+        "pending": [],
+        "current_priority": 100,
+        "complete": true,
+        "lack_episode": 0
+      }
+    },
+    {
+      "name": "empty range not complete",
+      "input": {
+        "type": "电视剧",
+        "season": 1,
+        "start_episode": 5,
+        "total_episode": 3,
+        "best_version": true,
+        "best_version_full": false,
+        "current_priority": 90,
+        "episode_priority": {},
+        "note": []
+      },
+      "expected": {
+        "episode_priority": {},
+        "downloaded": [],
+        "pending": [],
+        "current_priority": 90,
+        "complete": false,
+        "lack_episode": 0
+      }
+    },
+    {
+      "name": "normal subscription does not inherit",
+      "input": {
+        "type": "电视剧",
+        "season": 1,
+        "start_episode": 1,
+        "total_episode": 3,
+        "best_version": false,
+        "best_version_full": false,
+        "current_priority": 100,
+        "episode_priority": {},
+        "note": []
+      },
+      "expected": {
+        "episode_priority": {},
+        "downloaded": [],
+        "pending": [
+          1,
+          2,
+          3
+        ],
+        "current_priority": 100,
+        "complete": false,
+        "lack_episode": null
+      }
+    },
+    {
+      "name": "all target qualities complete",
+      "input": {
+        "type": "电视剧",
+        "season": 1,
+        "start_episode": 1,
+        "total_episode": 3,
+        "best_version": true,
+        "best_version_full": false,
+        "current_priority": null,
+        "episode_priority": {
+          "1": 100,
+          "2": 100,
+          "3": 100
+        },
+        "note": []
+      },
+      "expected": {
+        "episode_priority": {
+          "1": 100,
+          "2": 100,
+          "3": 100
+        },
+        "downloaded": [
+          1,
+          2,
+          3
+        ],
+        "pending": [],
+        "current_priority": 100,
+        "complete": true,
+        "lack_episode": 0
+      }
+    },
+    {
+      "name": "missing quality has minimum zero",
+      "input": {
+        "type": "电视剧",
+        "season": 1,
+        "start_episode": 1,
+        "total_episode": 3,
+        "best_version": true,
+        "best_version_full": false,
+        "current_priority": null,
+        "episode_priority": {
+          "1": 100,
+          "3": 90
+        },
+        "note": []
+      },
+      "expected": {
+        "episode_priority": {
+          "1": 100,
+          "3": 90
+        },
+        "downloaded": [
+          1,
+          3
+        ],
+        "pending": [
+          2,
+          3
+        ],
+        "current_priority": 0,
+        "complete": false,
+        "lack_episode": 1
+      }
+    },
+    {
+      "name": "negative quality retained",
+      "input": {
+        "type": "电视剧",
+        "season": 1,
+        "start_episode": 1,
+        "total_episode": 3,
+        "best_version": true,
+        "best_version_full": false,
+        "current_priority": null,
+        "episode_priority": {
+          "1": -1,
+          "2": 100,
+          "3": 90
+        },
+        "note": []
+      },
+      "expected": {
+        "episode_priority": {
+          "1": -1,
+          "2": 100,
+          "3": 90
+        },
+        "downloaded": [
+          2,
+          3
+        ],
+        "pending": [
+          1,
+          3
+        ],
+        "current_priority": -1,
+        "complete": false,
+        "lack_episode": 1
+      }
+    },
+    {
+      "name": "full mode only overall completes",
+      "input": {
+        "type": "电视剧",
+        "season": 1,
+        "start_episode": 1,
+        "total_episode": 3,
+        "best_version": true,
+        "best_version_full": true,
+        "current_priority": 90,
+        "episode_priority": {
+          "1": 100,
+          "2": 100,
+          "3": 100
+        },
+        "note": []
+      },
+      "expected": {
+        "episode_priority": {
+          "1": 100,
+          "2": 100,
+          "3": 100
+        },
+        "downloaded": [
+          1,
+          2,
+          3
+        ],
+        "pending": [],
+        "current_priority": 90,
+        "complete": false,
+        "lack_episode": 0
+      }
+    }
+  ],
+  "limitations": [
+    "conflicting normalized keys are rejected by Go because map input order is unavailable",
+    "Go bounds facts and numeric integers to native int range"
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "source_version": "v2.15.6",
+  "source_commit": "458c08a137bedb4c2acebcfbbf7f6c23ef35bfbf",
+  "source_tree": "81949b6c8a2f93b7ca36b10c0faa39c3edd94517",
+  "purpose": "R06 copied source evidence pending inclusion in the R00 official manifest, plus pure target-change fixture",
+  "files": [
+    {
+      "path": "official-v2/app/api/endpoints/subscribe.py",
+      "git_blob_sha1": "8cd5df5f189f55d738b16a1d883cd20e3b8772a9",
+      "sha256": "ee93ba32748abbac7ef6f060ad3eeeb05a5681b5bcdd7b691270f6bb7e8ab469"
+    },
+    {
+      "path": "official-v2/app/db/models/subscribe.py",
+      "git_blob_sha1": "3ef3daab8a8e722e0a4b42ddfec1f68088b9fb8f",
+      "sha256": "efa92d87ca839f42e2f2c38f591dc0635c21ce93fe5cb5120cd0d261e694a67e"
+    },
+    {
+      "path": "official-v2/app/db/subscribe_oper.py",
+      "git_blob_sha1": "0c3a3bd9c17bb4082ce4dfc16a4f1a5d8f2e2d8d",
+      "sha256": "83c3c0f6d4a588a7a32b3fc67f343e89c8aa1545301c1553859316aa03bf9b2c"
+    }
+  ],
+  "upstream_identity": "Each git blob SHA-1 matches app path in the captured official recursive tree and the copied local file.",
+  "pre_change_backup": {
+    "note": "All R06 A owned code and fixture paths were new. Existing domain and preflight files were read only.",
+    "observed_files": [
+      {
+        "path": "internal/subscription/episode_types.go",
+        "sha256": "f14a95ca7392a8a92906c9c318e6d6aa708bf1e13965600e04e6228931670424"
+      },
+      {
+        "path": "internal/subscription/episode_types_test.go",
+        "sha256": "d1b7ee2f372bdbd90b4c418f8fe150dfd63c86cc07bbcceda0020fa0852867fd"
+      },
+      {
+        "path": "docs/superpowers/evidence/2026-09-13-r06-preflight.md",
+        "sha256": "5fe5759e874f2958085e159a463117e92ea41ec7b4b46d6635415f2164251d4e"
+      }
+    ]
+  }
+}

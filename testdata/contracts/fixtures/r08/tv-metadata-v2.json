@@ -1,0 +1,2264 @@
+{
+  "schema_version": 1,
+  "version": "v2.15.6",
+  "git_tree": "81949b6c8a2f93b7ca36b10c0faa39c3edd94517",
+  "sources": [
+    {
+      "path": "app/chain/download.py",
+      "source_path": "D:/Projects/moviepilot_go/docs/contracts/baselines/2026-09-13/official-v2/app/chain/download.py",
+      "sha256": "ecfaaa2b2777809924aeb32632afa53d8eb701c7ee76e333099d6847988fc003",
+      "official_git_blob": "103e268432fd4372c49930fbb4c900d6587d7a07",
+      "computed_git_blob": "103e268432fd4372c49930fbb4c900d6587d7a07",
+      "git_blob_matches_frozen_tree": true,
+      "methods": {
+        "batch_download": [
+          1055,
+          1584
+        ],
+        "get_no_exists_info": [
+          1586,
+          1721
+        ]
+      },
+      "excerpts": [
+        {
+          "id": "season_dictionary_retry",
+          "start_line": 1647,
+          "end_line": 1662,
+          "source": "            if not mediainfo.seasons:\n                # 补充媒体信息\n                mediainfo: MediaInfo = self.recognize_media(mtype=mediainfo.type,\n                                                            tmdbid=mediainfo.tmdb_id,\n                                                            doubanid=mediainfo.douban_id,\n                                                            bangumiid=mediainfo.bangumi_id,\n                                                            anilistid=mediainfo.anilist_id,\n                                                            source=media_source,\n                                                            mediaid=media_id,\n                                                            episode_group=mediainfo.episode_group)\n                if not mediainfo:\n                    logger.error(f\"媒体信息识别失败！\")\n                    return False, {}\n                if not mediainfo.seasons:\n                    logger.error(f\"媒体信息中没有季集信息：{mediainfo.title_year}\")\n                    return False, {}"
+        },
+        {
+          "id": "skip_empty_season_and_filter_season",
+          "start_line": 1670,
+          "end_line": 1683,
+          "source": "            if not exists_tvs:\n                # 所有季集均缺失\n                for season, episodes in mediainfo.seasons.items():\n                    if not episodes:\n                        continue\n                    # 全季不存在\n                    if meta.sea \\\n                            and season not in meta.season_list:\n                        continue\n                    # 总集数\n                    total_ep = totals.get(season) or len(episodes)\n                    __append_no_exists(_season=season, _episodes=[],\n                                       _total=total_ep, _start=min(episodes))\n                return False, no_exists"
+        },
+        {
+          "id": "library_empty_target_can_report_satisfied",
+          "start_line": 1684,
+          "end_line": 1721,
+          "source": "            else:\n                # 存在一些，检查每季缺失的季集\n                for season, episodes in mediainfo.seasons.items():\n                    if meta.sea \\\n                            and season not in meta.season_list:\n                        continue\n                    if not episodes:\n                        continue\n                    # 该季总集数\n                    season_total = totals.get(season) or len(episodes)\n                    # 该季已存在的集\n                    exist_episodes = exists_tvs.seasons.get(season)\n                    if exist_episodes:\n                        # 已存在取差集\n                        if totals.get(season):\n                            # 按总集数计算缺失集（开始集为TMDB中的最小集）\n                            lack_episodes = list(set(range(min(episodes),\n                                                           season_total + min(episodes))\n                                                     ).difference(set(exist_episodes)))\n                        else:\n                            # 按TMDB集数计算缺失集\n                            lack_episodes = list(set(episodes).difference(set(exist_episodes)))\n                        if not lack_episodes:\n                            # 全部集存在\n                            continue\n                        # 添加不存在的季集信息\n                        __append_no_exists(_season=season, _episodes=lack_episodes,\n                                           _total=season_total, _start=min(lack_episodes))\n                    else:\n                        # 全季不存在\n                        __append_no_exists(_season=season, _episodes=[],\n                                           _total=season_total, _start=min(episodes))\n            # 存在不完整的剧集\n            if no_exists:\n                logger.debug(f\"媒体库中已存在部分剧集，缺失：{no_exists}\")\n                return False, no_exists\n            # 全部存在\n            return True, no_exists"
+        },
+        {
+          "id": "tv_batch_full_season_gate",
+          "start_line": 1249,
+          "end_line": 1259,
+          "source": "        # 电视剧整季匹配\n        if no_exists:\n            logger.info(f\"开始匹配电视剧整季：{no_exists}\")\n            # 先把整季缺失的拿出来，看是否刚好有所有季都满足的种子 {tmdbid: [seasons]}\n            need_seasons: Dict[int, list] = {}\n            for need_mid, need_tv in no_exists.items():\n                for tv in need_tv.values():\n                    if not tv:\n                        continue\n                    # 季列表为空的，代表全季缺失\n                    if not tv.episodes:"
+        },
+        {
+          "id": "tv_batch_title_gate",
+          "start_line": 1383,
+          "end_line": 1386,
+          "source": "        # 电视剧季内的集匹配\n        if no_exists:\n            logger.info(f\"开始电视剧完整集匹配：{no_exists}\")\n            # TMDBID列表"
+        },
+        {
+          "id": "tv_batch_unpack_gate",
+          "start_line": 1470,
+          "end_line": 1474,
+          "source": "        # 仍然缺失的剧集，从整季中选择需要的集数文件下载，仅支持QB和TR\n        if no_exists:\n            logger.info(f\"开始电视剧多集拆包匹配：{no_exists}\")\n            # TMDBID列表\n            no_exists_list = list(no_exists)"
+        },
+        {
+          "id": "batch_returns_original_lefts",
+          "start_line": 1582,
+          "end_line": 1584,
+          "source": "        # 返回下载的资源，剩下没下完的\n        logger.info(f\"成功下载种子数：{len(downloaded_list)}，剩余未下载的剧集：{no_exists}\")\n        return downloaded_list, no_exists"
+        }
+      ]
+    },
+    {
+      "path": "app/chain/subscribe.py",
+      "source_path": "D:/Projects/moviepilot_go/docs/contracts/baselines/2026-09-13/official-v2/app/chain/subscribe.py",
+      "sha256": "acb32d818b2cb8bf8dec3062e1b9155595b2045b8de08aa7db3005f6d48b0f95",
+      "official_git_blob": "d9de8b3c0b8cd4d2d1ab7469b27724f50dc4bfdc",
+      "computed_git_blob": "d9de8b3c0b8cd4d2d1ab7469b27724f50dc4bfdc",
+      "git_blob_matches_frozen_tree": true,
+      "methods": {
+        "compute_lack_episode": [
+          271,
+          330
+        ],
+        "__is_full_best_version_enabled": [
+          619,
+          627
+        ],
+        "finish_subscribe_or_not": [
+          1575,
+          1624
+        ],
+        "__get_downloaded": [
+          2485,
+          2511
+        ],
+        "__prepare_subscribe_progress_fields": [
+          2514,
+          2535
+        ],
+        "__apply_subscribe_update": [
+          2538,
+          2546
+        ],
+        "__refresh_subscribe_progress_with_no_exists": [
+          2548,
+          2581
+        ],
+        "__finish_subscribe": [
+          2812,
+          2870
+        ],
+        "__get_subscribe_no_exits": [
+          3587,
+          3705
+        ],
+        "resolve_subscribe_missing": [
+          4022,
+          4106
+        ],
+        "__resolve_effective_total_episode": [
+          4176,
+          4194
+        ]
+      },
+      "excerpts": [
+        {
+          "id": "precise_initial_recognition_gate",
+          "start_line": 1383,
+          "end_line": 1402,
+          "source": "                        # 识别媒体信息\n                        mediainfo: MediaInfo = self.recognize_media(\n                            meta=meta,\n                            mtype=meta.type,\n                            **_subscribe_recognize_kwargs(subscribe),\n                            episode_group=subscribe.episode_group,\n                            cache=False,\n                        )\n                        if not mediainfo:\n                            logger.warn(\n                                f'未识别到媒体信息，标题：{subscribe.name}，tmdbid：{subscribe.tmdbid}，doubanid：{subscribe.doubanid}')\n                            continue\n\n                        # 如果媒体已存在或已下载完毕，跳过当前订阅处理\n                        exist_flag, no_exists = self.check_and_handle_existing_media(subscribe=subscribe,\n                                                                                     meta=meta,\n                                                                                     mediainfo=mediainfo,\n                                                                                     mediakey=mediakey)\n                        if exist_flag:\n                            continue"
+        },
+        {
+          "id": "precise_search_empty_missing",
+          "start_line": 1415,
+          "end_line": 1428,
+          "source": "                        # 搜索，同时电视剧会过滤掉不需要的剧集\n                        contexts = SearchChain().process(mediainfo=mediainfo,\n                                                         keyword=subscribe.keyword,\n                                                         no_exists=no_exists,\n                                                         sites=sites,\n                                                         rule_groups=rule_groups,\n                                                         area=\"imdbid\" if subscribe.search_imdbid else \"title\",\n                                                         custom_words=custom_word_list,\n                                                         filter_params=self.get_params(subscribe))\n                        if not contexts:\n                            logger.warn(f'订阅 {subscribe.keyword or subscribe.name} 未搜索到资源')\n                            self.finish_subscribe_or_not(subscribe=subscribe, meta=meta,\n                                                         mediainfo=mediainfo, lefts=no_exists)\n                            continue"
+        },
+        {
+          "id": "precise_batch_and_finish",
+          "start_line": 1498,
+          "end_line": 1520,
+          "source": "                        # 自动下载\n                        downloads, lefts = self.__download_best_version_with_full_pack_first(\n                            contexts=matched_contexts,\n                            no_exists=no_exists,\n                            subscribe=subscribe,\n                            mediakey=mediakey,\n                            username=subscribe.username,\n                            save_path=subscribe.save_path,\n                            downloader=subscribe.downloader,\n                            source=self.get_subscribe_source_keyword(subscribe)\n                        )\n\n                        # 同步外部修改，更新订阅信息\n                        subscribe = subscribeoper.get(subscribe.id)\n\n                        # 判断是否应完成订阅\n                        if subscribe:\n                            self.finish_subscribe_or_not(subscribe=subscribe, meta=meta, mediainfo=mediainfo,\n                                                         downloads=downloads, lefts=lefts)\n                    finally:\n                        # 如果状态为N则更新为R\n                        if search_attempted and subscribe and subscribe.state == 'N':\n                            subscribeoper.update(subscribe.id, {'state': 'R'})"
+        },
+        {
+          "id": "rss_initial_recognition_gate",
+          "start_line": 1829,
+          "end_line": 1847,
+          "source": "                    # 识别媒体信息\n                    mediainfo: MediaInfo = self.recognize_media(\n                        meta=meta,\n                        mtype=meta.type,\n                        **_subscribe_recognize_kwargs(subscribe),\n                        episode_group=subscribe.episode_group,\n                        cache=False,\n                    )\n                    if not mediainfo:\n                        logger.warn(\n                            f'未识别到媒体信息，标题：{subscribe.name}，tmdbid：{subscribe.tmdbid}，doubanid：{subscribe.doubanid}')\n                        continue\n\n                    # 如果媒体已存在或已下载完毕，跳过当前订阅处理\n                    exist_flag, no_exists = self.check_and_handle_existing_media(subscribe=subscribe, meta=meta,\n                                                                                 mediainfo=mediainfo,\n                                                                                 mediakey=mediakey)\n                    if exist_flag:\n                        continue"
+        },
+        {
+          "id": "rss_empty_missing_does_not_filter_episodes",
+          "start_line": 1978,
+          "end_line": 1994,
+          "source": "                                # 非洗版\n                                if not subscribe.best_version:\n                                    # 不是缺失的剧集不要\n                                    if no_exists and no_exists.get(mediakey):\n                                        # 缺失集\n                                        no_exists_info = no_exists.get(mediakey).get(subscribe.season)\n                                        if no_exists_info:\n                                            # 是否有交集\n                                            if no_exists_info.episodes and \\\n                                                    torrent_meta.episode_list and \\\n                                                    not set(no_exists_info.episodes).intersection(\n                                                        set(torrent_meta.episode_list)\n                                                    ):\n                                                logger.debug(\n                                                    f'{torrent_info.title} 对应剧集 {torrent_meta.episode_list} 未包含缺失的剧集'\n                                                )\n                                                continue"
+        },
+        {
+          "id": "rss_match_batch_and_finish",
+          "start_line": 2068,
+          "end_line": 2094,
+          "source": "                    if not _match_context:\n                        # 未匹配到资源\n                        logger.info(f'{mediainfo.title_year} 未匹配到符合条件的资源')\n                        self.finish_subscribe_or_not(subscribe=subscribe, meta=meta,\n                                                     mediainfo=mediainfo, lefts=no_exists)\n                        continue\n\n                    # 开始批量择优下载\n                    logger.info(f'{mediainfo.title_year} 匹配完成，共匹配到{len(_match_context)}个资源')\n                    downloads, lefts = self.__download_best_version_with_full_pack_first(\n                        contexts=_match_context,\n                        no_exists=no_exists,\n                        subscribe=subscribe,\n                        mediakey=mediakey,\n                        username=subscribe.username,\n                        save_path=subscribe.save_path,\n                        downloader=subscribe.downloader,\n                        source=self.get_subscribe_source_keyword(subscribe)\n                    )\n\n                    # 同步外部修改，更新订阅信息\n                    subscribe = SubscribeOper().get(subscribe.id)\n\n                    # 判断是否要完成订阅\n                    if subscribe:\n                        self.finish_subscribe_or_not(subscribe=subscribe, meta=meta, mediainfo=mediainfo,\n                                                     downloads=downloads, lefts=lefts)"
+        },
+        {
+          "id": "pending_terminal_guard",
+          "start_line": 2812,
+          "end_line": 2827,
+          "source": "    def __finish_subscribe(self, subscribe: Subscribe, mediainfo: MediaInfo, meta: MetaBase):\n        \"\"\"\n        完成订阅\n        \"\"\"\n        # 如果订阅状态为待定（P），说明订阅信息尚未完全更新，无法完成订阅\n        if subscribe.state == \"P\":\n            return\n        # 发送订阅完成判定事件，在写入 DB 前，允许外部据完结策略否决本次自动完成\n        completion_event = eventmanager.send_event(\n            ChainEventType.SubscribeCompletionCheck,\n            SubscribeCompletionCheckEventData(subscribe=subscribe, mediainfo=mediainfo, meta=meta))\n        if completion_event and completion_event.event_data:\n            completion_data: SubscribeCompletionCheckEventData = completion_event.event_data\n            if completion_data.cancel:\n                logger.info(f'{mediainfo.title_year} 完成被 [{completion_data.source}] 否决：{completion_data.reason}')\n                return"
+        },
+        {
+          "id": "explicit_refresh_distinguishes_failed_resolution",
+          "start_line": 2601,
+          "end_line": 2611,
+          "source": "            if not mediainfo:\n                return {\"scene\": scene, \"updated\": False, \"fields\": [], \"reason\": \"recognize_failed\"}\n            mediakey = _subscribe_media_key(subscribe)\n            exist_flag, no_exists = self.resolve_subscribe_missing(\n                subscribe=subscribe,\n                meta=meta,\n                mediainfo=mediainfo,\n                mediakey=mediakey,\n            )\n            if not exist_flag and not no_exists:\n                return {\"scene\": scene, \"updated\": False, \"fields\": [], \"reason\": \"resolve_missing_failed\"}"
+        },
+        {
+          "id": "missing_adjustment_preserves_false_empty",
+          "start_line": 3605,
+          "end_line": 3607,
+          "source": "        # 使用订阅的总集数和开始集数替换no_exists\n        if not no_exists or not no_exists.get(mediakey):\n            return False, no_exists"
+        },
+        {
+          "id": "ordinary_resolution_totals",
+          "start_line": 4037,
+          "end_line": 4050,
+          "source": "        mediakey = mediakey or _subscribe_media_key(subscribe)\n        effective_total_episode = self.__resolve_effective_total_episode(subscribe, mediainfo)\n\n        if not subscribe.best_version:\n            totals = {}\n            if subscribe.season is not None and effective_total_episode:\n                totals = {\n                    subscribe.season: effective_total_episode\n                }\n            exist_flag, no_exists = DownloadChain().get_no_exists_info(\n                meta=meta,\n                mediainfo=mediainfo,\n                totals=totals\n            )"
+        },
+        {
+          "id": "effective_total_uses_initial_media",
+          "start_line": 4176,
+          "end_line": 4194,
+          "source": "    def __resolve_effective_total_episode(subscribe: Subscribe, mediainfo: MediaInfo) -> int:\n        \"\"\"\n        只读计算完成前有效总集数，不触发事件、不写回订阅。\n\n        主流程会通过 ``__refresh_total_episode_before_completion`` 持久化增长后的总集数；\n        该查询接口只需要同样避免旧 total 造成误判，因此仅使用当前 mediainfo 中更大的\n        季集数作为临时目标范围。\n        \"\"\"\n        current_total = subscribe.total_episode or 0\n        if subscribe.type != MediaType.TV.value:\n            return current_total\n        if subscribe.manual_total_episode:\n            return current_total\n        if subscribe.season is None:\n            return current_total\n        media_total = len((mediainfo.seasons or {}).get(subscribe.season) or [])\n        if media_total > current_total:\n            return media_total\n        return current_total"
+        },
+        {
+          "id": "precheck_total_refresh_before_missing_retry",
+          "start_line": 3999,
+          "end_line": 4011,
+          "source": "        self.__refresh_total_episode_before_completion(\n            subscribe=subscribe,\n            mediainfo=mediainfo,\n            meta=meta,\n            mediakey=mediakey,\n        )\n\n        exist_flag, no_exists = self.resolve_subscribe_missing(\n            subscribe=subscribe,\n            meta=meta,\n            mediainfo=mediainfo,\n            mediakey=mediakey,\n        )"
+        },
+        {
+          "id": "empty_primary_count_keeps_existing_total",
+          "start_line": 4266,
+          "end_line": 4293,
+          "source": "        if subscribe.type != MediaType.TV.value:\n            return\n        if subscribe.manual_total_episode:\n            return\n        if subscribe.season is None:\n            return\n\n        current_total_episode = len((mediainfo.seasons or {}).get(subscribe.season) or [])\n        # 外部事件只能向上覆盖主程序本次识别到的 TMDB 当前季总集数，已有订阅回落由主程序跟随本次识别结果持久化。\n        new_total_episode = self.__apply_episodes_refresh(\n            current_total_episode, season=subscribe.season, mediainfo=mediainfo,\n            tmdbid=subscribe.tmdbid, doubanid=subscribe.doubanid,\n            bangumiid=subscribe.bangumiid,\n            anilistid=subscribe.anilistid,\n            media_source=subscribe.media_source,\n            media_id=subscribe.media_id,\n            subscribe_id=subscribe.id, scene=\"precheck\")\n        old_total_episode = subscribe.total_episode or 0\n        if meta is not None and new_total_episode and new_total_episode < old_total_episode:\n            new_total_episode = self.__resolve_total_episode_decrease(\n                subscribe=subscribe,\n                candidate_total=new_total_episode,\n                meta=meta,\n                mediainfo=mediainfo,\n                mediakey=mediakey,\n            )\n        if not new_total_episode or new_total_episode == old_total_episode:\n            return"
+        },
+        {
+          "id": "rss_includes_pending_state",
+          "start_line": 4345,
+          "end_line": 4358,
+          "source": "    def get_states_for_search(state: str) -> str:\n        \"\"\"\n        根据给定的状态返回实际需要搜索的状态列表，支持多个状态用逗号分隔\n        :param state: 订阅状态\n            N: New（新建，未处理）\n            R: Resolved（订阅中）\n            P: Pending（待定，信息待进一步更新，允许搜索，不允许完成）\n            S: Suspended（暂停，订阅不参与任何动作，暂时停止处理）\n        :return: 需要查询的状态列表（多个状态用逗号分隔）\n        \"\"\"\n        # 如果状态是 R 或 P，则视为一起搜索，返回 R,P 作为查询条件\n        if state in [\"R\", \"P\"]:\n            return \"R,P\"\n        return state"
+        }
+      ]
+    },
+    {
+      "path": "app/chain/search.py",
+      "source_path": "D:/Projects/moviepilot_v2/app/chain/search.py",
+      "sha256": "f376e179df2e5af27577dc1eff7cf20c27bf433d1de2505ea38fc8f936c7329b",
+      "official_git_blob": "e375795e3da8c1d2490f26ec651b14bb6451f316",
+      "computed_git_blob": "e375795e3da8c1d2490f26ec651b14bb6451f316",
+      "git_blob_matches_frozen_tree": true,
+      "methods": {
+        "__prepare_params": [
+          1070,
+          1105
+        ]
+      },
+      "excerpts": [
+        {
+          "id": "empty_missing_search_scope",
+          "start_line": 1077,
+          "end_line": 1088,
+          "source": "        # 缺失的季集\n        media_source, media_id = resolve_media_identity(media=mediainfo)\n        mediakey = build_media_key(media_source, media_id)\n        if no_exists and no_exists.get(mediakey):\n            # 过滤剧集\n            season_episodes = {sea: info.episodes\n                               for sea, info in no_exists[mediakey].items()}\n        elif mediainfo.season is not None:\n            # 豆瓣只搜索当前季\n            season_episodes = {mediainfo.season: []}\n        else:\n            season_episodes = None"
+        },
+        {
+          "id": "search_may_recognize_again_for_missing_aliases",
+          "start_line": 1337,
+          "end_line": 1345,
+          "source": "        # 补充媒体信息\n        if not mediainfo.names:\n            mediainfo: MediaInfo = self.recognize_media(\n                mtype=mediainfo.type,\n                **self._media_recognize_kwargs(mediainfo),\n            )\n            if not mediainfo:\n                logger.error(f'媒体信息识别失败！')\n                return []"
+        },
+        {
+          "id": "search_is_not_gated_on_missing",
+          "start_line": 1347,
+          "end_line": 1372,
+          "source": "        # 准备搜索参数\n        season_episodes, keywords = self.__prepare_params(\n            mediainfo=mediainfo,\n            keyword=keyword,\n            no_exists=no_exists\n        )\n\n        # 站点搜索结果\n        torrents: List[TorrentInfo] = []\n        # 站点搜索次数\n        search_count = 0\n\n        # 多关键字执行搜索\n        for search_word in keywords:\n            # 强制休眠 1-10 秒\n            if search_count > 0:\n                logger.info(f\"已搜索 {search_count} 次，强制休眠 1-10 秒 ...\")\n                time.sleep(random.randint(1, 10))\n\n            # 搜索站点\n            results = self.__search_all_sites(\n                mediainfo=mediainfo,\n                keyword=search_word,\n                sites=sites,\n                area=area\n            ) or []"
+        },
+        {
+          "id": "season_filter_truthiness",
+          "start_line": 1240,
+          "end_line": 1245,
+          "source": "                # 季集数过滤\n                if season_episodes \\\n                        and not TorrentHelper.match_season_episodes(torrent=torrent,\n                                                                    meta=torrent_meta,\n                                                                    season_episodes=season_episodes):\n                    continue"
+        }
+      ]
+    },
+    {
+      "path": "app/chain/media.py",
+      "source_path": "D:/Projects/moviepilot_v2/app/chain/media.py",
+      "sha256": "8695b34de411e058969a552350e111d4af1650a74fc223f6a12280578391cde9",
+      "official_git_blob": "2c17871a2f42454685c7069ad2bdb6f63f658682",
+      "computed_git_blob": "2c17871a2f42454685c7069ad2bdb6f63f658682",
+      "git_blob_matches_frozen_tree": true,
+      "methods": {
+        "_merge_tmdb_auxiliary": [
+          660,
+          683
+        ]
+      },
+      "excerpts": [
+        {
+          "id": "auxiliary_does_not_merge_seasons",
+          "start_line": 659,
+          "end_line": 683,
+          "source": "    @staticmethod\n    def _merge_tmdb_auxiliary(\n            mediainfo: MediaInfo,\n            tmdb_media: MediaInfo,\n    ) -> MediaInfo:\n        \"\"\"\n        将 TMDB 兼容字段合并到主识别结果，不改变主数据源身份和展示信息。\n\n        :param mediainfo: 主识别源返回的媒体信息\n        :param tmdb_media: TMDB 辅助识别结果\n        :return: 已补充 TMDB 兼容字段的主媒体信息\n        \"\"\"\n        if not tmdb_media or tmdb_media.source != \"themoviedb\" or not tmdb_media.tmdb_id:\n            return mediainfo\n\n        mediainfo.tmdb_id = tmdb_media.tmdb_id\n        mediainfo.tmdb_info = tmdb_media.tmdb_info or mediainfo.tmdb_info\n        if not mediainfo.category:\n            mediainfo.category = tmdb_media.category\n        if not mediainfo.genre_ids:\n            mediainfo.genre_ids = list(tmdb_media.genre_ids or [])\n        for field in (\"imdb_id\", \"tvdb_id\", \"collection_id\"):\n            if not getattr(mediainfo, field, None):\n                setattr(mediainfo, field, getattr(tmdb_media, field, None))\n        return mediainfo"
+        }
+      ]
+    },
+    {
+      "path": "app/chain/__init__.py",
+      "source_path": "D:/Projects/moviepilot_v2/app/chain/__init__.py",
+      "sha256": "167f3c50133bc7cd2a57af4d79c51b3a19905a05340df77ceb30714e92db8eb9",
+      "official_git_blob": "062b04d3f302c7f653d43a29201054420d8f2c56",
+      "computed_git_blob": "062b04d3f302c7f653d43a29201054420d8f2c56",
+      "git_blob_matches_frozen_tree": true,
+      "methods": {},
+      "excerpts": [
+        {
+          "id": "retry_default_cache_argument",
+          "start_line": 637,
+          "end_line": 650,
+          "source": "    def recognize_media(\n            self,\n            meta: MetaBase = None,\n            mtype: Optional[MediaType] = None,\n            source: Optional[str] = None,\n            mediaid: Optional[str] = None,\n            tmdbid: Optional[int] = None,\n            doubanid: Optional[str] = None,\n            bangumiid: Optional[int] = None,\n            anilistid: Optional[int] = None,\n            episode_group: Optional[str] = None,\n            cache: bool = True,\n            share_meta: MetaBase = None,\n    ) -> Optional[MediaInfo]:"
+        },
+        {
+          "id": "explicit_source_keeps_one_native_id",
+          "start_line": 611,
+          "end_line": 625,
+          "source": "        if source:\n            source_ids = {\n                \"themoviedb\": to_int(mediaid) if mediaid else to_int(tmdbid),\n                \"douban\": str(mediaid) if mediaid else str(doubanid) if doubanid else None,\n                \"bangumi\": to_int(mediaid) if mediaid else to_int(bangumiid),\n                \"anilist\": to_int(mediaid) if mediaid else to_int(anilistid),\n            }\n            selected_id = source_ids.get(source)\n            return (\n                source,\n                selected_id if source == \"themoviedb\" else None,\n                selected_id if source == \"douban\" else None,\n                selected_id if source == \"bangumi\" else None,\n                selected_id if source == \"anilist\" else None,\n            )"
+        },
+        {
+          "id": "cache_argument_controls_fresh_context",
+          "start_line": 698,
+          "end_line": 706,
+          "source": "            \"anilistid\": anilistid,\n            \"episode_group\": episode_group,\n            \"cache\": cache,\n        }\n        with fresh(not cache):\n            mediainfo = self.run_module(\n                \"recognize_media\",\n                **module_kwargs,\n            )"
+        }
+      ]
+    },
+    {
+      "path": "app/modules/themoviedb/__init__.py",
+      "source_path": "D:/Projects/moviepilot_v2/app/modules/themoviedb/__init__.py",
+      "sha256": "383dee3ab7ae88a569b1b772cd86731a64d9f624b384c011338ef55d78ac44d6",
+      "official_git_blob": "3dcd30428eac5b75c76a0c4e7409cde1cf4400d9",
+      "computed_git_blob": "3dcd30428eac5b75c76a0c4e7409cde1cf4400d9",
+      "git_blob_matches_frozen_tree": true,
+      "methods": {},
+      "excerpts": [
+        {
+          "id": "no_meta_retry_bypasses_tmdb_recognition_cache",
+          "start_line": 478,
+          "end_line": 491,
+          "source": "        # 验证参数\n        if not self._validate_recognize_params(meta, tmdbid, kwargs.get(\"source\")):\n            return None\n\n        if not meta:\n            # 未提供元数据时，直接使用tmdbid查询，不使用缓存\n            cache_info = {}\n        else:\n            # 读取缓存\n            if mtype:\n                meta.type = mtype\n            if tmdbid:\n                meta.tmdbid = tmdbid\n            cache_info = self.cache.get(meta) if cache else {}"
+        },
+        {
+          "id": "no_cache_info_fetches_details",
+          "start_line": 499,
+          "end_line": 505,
+          "source": "        # 识别匹配\n        if not cache_info or not cache:\n            info = None\n            # 缓存没有或者强制不使用缓存\n            if tmdbid:\n                # 直接查询详情，支持同ID电影/电视剧消歧\n                info = self._get_info_by_tmdbid(tmdbid=tmdbid, mtype=mtype, meta=meta)"
+        }
+      ]
+    },
+    {
+      "path": "app/core/cache.py",
+      "source_path": "D:/Projects/moviepilot_v2/app/core/cache.py",
+      "sha256": "fbcd0a557be024741891b539321fd06d09e0025c15f699d3bfdab5cebec2a91d",
+      "official_git_blob": "2062797f6d13e5d9bfe016b05c876b388972b6d6",
+      "computed_git_blob": "2062797f6d13e5d9bfe016b05c876b388972b6d6",
+      "git_blob_matches_frozen_tree": true,
+      "methods": {},
+      "excerpts": [
+        {
+          "id": "fresh_skips_read_but_success_still_caches",
+          "start_line": 1293,
+          "end_line": 1310,
+          "source": "            @wraps(func)\n            def wrapper(*args, **kwargs):\n                # 获取缓存键\n                cache_key = __get_cache_key(args, kwargs)\n\n                if not is_fresh():\n                    # 尝试获取缓存\n                    cached_value = cache_backend.get(cache_key, region=cache_region)\n                    if should_cache(cached_value) and is_valid_cache_value(cache_key, cached_value, cache_region):\n                        return cached_value\n                # 执行函数并缓存结果\n                result = func(*args, **kwargs)\n                # 判断是否需要缓存\n                if not should_cache(result):\n                    return result\n                # 设置缓存（如果有传入的 maxsize 和 ttl，则覆盖默认值）\n                cache_backend.set(cache_key, result, ttl=ttl, maxsize=maxsize, region=cache_region)\n                return result"
+        }
+      ]
+    },
+    {
+      "path": "app/modules/themoviedb/tmdbv3api/tmdb.py",
+      "source_path": "D:/Projects/moviepilot_v2/app/modules/themoviedb/tmdbv3api/tmdb.py",
+      "sha256": "cf868d6d0d50a17b710ba4bac6c41f8ec51aa6ac3acf4fc89f7c7d642a4746a6",
+      "official_git_blob": "078216c8e10106c56a4b5d62c4173e5831b8ea0a",
+      "computed_git_blob": "078216c8e10106c56a4b5d62c4173e5831b8ea0a",
+      "git_blob_matches_frozen_tree": true,
+      "methods": {},
+      "excerpts": [
+        {
+          "id": "tmdb_api_detail_request_cache",
+          "start_line": 139,
+          "end_line": 145,
+          "source": "    @cached(maxsize=settings.CONF.tmdb, ttl=settings.CONF.meta, skip_none=True)\n    def request(self, method, url, data, json, **kwargs):\n        req = self._request_once(method, url, data, json)\n        if req is None and method == \"GET\" and self._owns_session:\n            logger.debug(\"TMDB同步请求失败，重建会话后重试一次\")\n            self._reset_owned_session()\n            req = self._request_once(method, url, data, json)"
+        },
+        {
+          "id": "tmdb_request_default_cached",
+          "start_line": 362,
+          "end_line": 370,
+          "source": "    def _request_obj(self, action, params=\"\", call_cached=True,\n                     method=\"GET\", data=None, json=None, key=None):\n        self._validate_api_key()\n        url = self._build_url(action, params)\n\n        with fresh(not call_cached or method == \"POST\"):\n            req = self.request(method, url, data, json,\n                                      _ts=datetime.strftime(datetime.now(), '%Y%m%d'))\n"
+        }
+      ]
+    }
+  ],
+  "scope": "普通 TV 完整外层：初始识别保护、空季集字典单次补认、resolve 返回值、精准搜索/RSS 路由、零 TV 添加和最终进度/完成；不执行网络。",
+  "cases": [
+    {
+      "name": "initial_recognition_failure_precise_n",
+      "input": {
+        "entrypoint": "precise",
+        "state": "N",
+        "initial_recognized": false,
+        "primary_seasons": {
+          "1": [
+            1,
+            2,
+            3
+          ]
+        },
+        "retry_recognized": false,
+        "retry_seasons": null,
+        "library_seasons": null,
+        "manual_total_episode": false,
+        "total_episode": 3,
+        "start_episode": 1,
+        "note": [],
+        "matching_context_count": 0,
+        "completion_cancel": false
+      },
+      "expected": {
+        "resolution": null,
+        "routing": {
+          "initial_skipped": true,
+          "preflight_satisfied": false,
+          "searched": false,
+          "rss_matching_reached": false,
+          "batch_executed": false,
+          "finish_after_matching": false,
+          "search_season_episodes": null,
+          "initial_recognition_cache_argument": false
+        },
+        "retry_calls": [],
+        "effective_total_before_retry": null,
+        "config_total_episode_after_resolution": 3,
+        "initial_media_seasons_after_resolution": null,
+        "library_calls": 0,
+        "tv_download_adds": 0,
+        "lack_episode": 3,
+        "progress_writes": [],
+        "completed": false,
+        "history_writes": 0,
+        "pending_guard_applied": false,
+        "remaining_state": "R",
+        "completion_check_called": false
+      }
+    },
+    {
+      "name": "initial_recognition_failure_precise_r",
+      "input": {
+        "entrypoint": "precise",
+        "state": "R",
+        "initial_recognized": false,
+        "primary_seasons": {
+          "1": [
+            1,
+            2,
+            3
+          ]
+        },
+        "retry_recognized": false,
+        "retry_seasons": null,
+        "library_seasons": null,
+        "manual_total_episode": false,
+        "total_episode": 3,
+        "start_episode": 1,
+        "note": [],
+        "matching_context_count": 0,
+        "completion_cancel": false
+      },
+      "expected": {
+        "resolution": null,
+        "routing": {
+          "initial_skipped": true,
+          "preflight_satisfied": false,
+          "searched": false,
+          "rss_matching_reached": false,
+          "batch_executed": false,
+          "finish_after_matching": false,
+          "search_season_episodes": null,
+          "initial_recognition_cache_argument": false
+        },
+        "retry_calls": [],
+        "effective_total_before_retry": null,
+        "config_total_episode_after_resolution": 3,
+        "initial_media_seasons_after_resolution": null,
+        "library_calls": 0,
+        "tv_download_adds": 0,
+        "lack_episode": 3,
+        "progress_writes": [],
+        "completed": false,
+        "history_writes": 0,
+        "pending_guard_applied": false,
+        "remaining_state": "R",
+        "completion_check_called": false
+      }
+    },
+    {
+      "name": "initial_recognition_failure_precise_p",
+      "input": {
+        "entrypoint": "precise",
+        "state": "P",
+        "initial_recognized": false,
+        "primary_seasons": {
+          "1": [
+            1,
+            2,
+            3
+          ]
+        },
+        "retry_recognized": false,
+        "retry_seasons": null,
+        "library_seasons": null,
+        "manual_total_episode": false,
+        "total_episode": 3,
+        "start_episode": 1,
+        "note": [],
+        "matching_context_count": 0,
+        "completion_cancel": false
+      },
+      "expected": {
+        "resolution": null,
+        "routing": {
+          "initial_skipped": true,
+          "preflight_satisfied": false,
+          "searched": false,
+          "rss_matching_reached": false,
+          "batch_executed": false,
+          "finish_after_matching": false,
+          "search_season_episodes": null,
+          "initial_recognition_cache_argument": false
+        },
+        "retry_calls": [],
+        "effective_total_before_retry": null,
+        "config_total_episode_after_resolution": 3,
+        "initial_media_seasons_after_resolution": null,
+        "library_calls": 0,
+        "tv_download_adds": 0,
+        "lack_episode": 3,
+        "progress_writes": [],
+        "completed": false,
+        "history_writes": 0,
+        "pending_guard_applied": false,
+        "remaining_state": "P",
+        "completion_check_called": false
+      }
+    },
+    {
+      "name": "initial_recognition_failure_rss_r",
+      "input": {
+        "entrypoint": "rss",
+        "state": "R",
+        "initial_recognized": false,
+        "primary_seasons": {
+          "1": [
+            1,
+            2,
+            3
+          ]
+        },
+        "retry_recognized": false,
+        "retry_seasons": null,
+        "library_seasons": null,
+        "manual_total_episode": false,
+        "total_episode": 3,
+        "start_episode": 1,
+        "note": [],
+        "matching_context_count": 0,
+        "completion_cancel": false
+      },
+      "expected": {
+        "resolution": null,
+        "routing": {
+          "initial_skipped": true,
+          "preflight_satisfied": false,
+          "searched": false,
+          "rss_matching_reached": false,
+          "batch_executed": false,
+          "finish_after_matching": false,
+          "search_season_episodes": null,
+          "initial_recognition_cache_argument": false
+        },
+        "retry_calls": [],
+        "effective_total_before_retry": null,
+        "config_total_episode_after_resolution": 3,
+        "initial_media_seasons_after_resolution": null,
+        "library_calls": 0,
+        "tv_download_adds": 0,
+        "lack_episode": 3,
+        "progress_writes": [],
+        "completed": false,
+        "history_writes": 0,
+        "pending_guard_applied": false,
+        "remaining_state": "R",
+        "completion_check_called": false
+      }
+    },
+    {
+      "name": "initial_recognition_failure_rss_p",
+      "input": {
+        "entrypoint": "rss",
+        "state": "P",
+        "initial_recognized": false,
+        "primary_seasons": {
+          "1": [
+            1,
+            2,
+            3
+          ]
+        },
+        "retry_recognized": false,
+        "retry_seasons": null,
+        "library_seasons": null,
+        "manual_total_episode": false,
+        "total_episode": 3,
+        "start_episode": 1,
+        "note": [],
+        "matching_context_count": 0,
+        "completion_cancel": false
+      },
+      "expected": {
+        "resolution": null,
+        "routing": {
+          "initial_skipped": true,
+          "preflight_satisfied": false,
+          "searched": false,
+          "rss_matching_reached": false,
+          "batch_executed": false,
+          "finish_after_matching": false,
+          "search_season_episodes": null,
+          "initial_recognition_cache_argument": false
+        },
+        "retry_calls": [],
+        "effective_total_before_retry": null,
+        "config_total_episode_after_resolution": 3,
+        "initial_media_seasons_after_resolution": null,
+        "library_calls": 0,
+        "tv_download_adds": 0,
+        "lack_episode": 3,
+        "progress_writes": [],
+        "completed": false,
+        "history_writes": 0,
+        "pending_guard_applied": false,
+        "remaining_state": "P",
+        "completion_check_called": false
+      }
+    },
+    {
+      "name": "manual_total_does_not_bypass_initial_recognition",
+      "input": {
+        "entrypoint": "precise",
+        "state": "N",
+        "initial_recognized": false,
+        "primary_seasons": {
+          "1": [
+            1,
+            2,
+            3
+          ]
+        },
+        "retry_recognized": false,
+        "retry_seasons": null,
+        "library_seasons": null,
+        "manual_total_episode": true,
+        "total_episode": 3,
+        "start_episode": 1,
+        "note": [],
+        "matching_context_count": 0,
+        "completion_cancel": false
+      },
+      "expected": {
+        "resolution": null,
+        "routing": {
+          "initial_skipped": true,
+          "preflight_satisfied": false,
+          "searched": false,
+          "rss_matching_reached": false,
+          "batch_executed": false,
+          "finish_after_matching": false,
+          "search_season_episodes": null,
+          "initial_recognition_cache_argument": false
+        },
+        "retry_calls": [],
+        "effective_total_before_retry": null,
+        "config_total_episode_after_resolution": 3,
+        "initial_media_seasons_after_resolution": null,
+        "library_calls": 0,
+        "tv_download_adds": 0,
+        "lack_episode": 3,
+        "progress_writes": [],
+        "completed": false,
+        "history_writes": 0,
+        "pending_guard_applied": false,
+        "remaining_state": "R",
+        "completion_check_called": false
+      }
+    },
+    {
+      "name": "empty_dictionary_retry_failure_precise_n",
+      "input": {
+        "entrypoint": "precise",
+        "state": "N",
+        "initial_recognized": true,
+        "primary_seasons": {},
+        "retry_recognized": false,
+        "retry_seasons": null,
+        "library_seasons": null,
+        "manual_total_episode": false,
+        "total_episode": 3,
+        "start_episode": 1,
+        "note": [],
+        "matching_context_count": 0,
+        "completion_cancel": false
+      },
+      "expected": {
+        "resolution": {
+          "satisfied": false,
+          "no_exists": {}
+        },
+        "routing": {
+          "initial_skipped": false,
+          "preflight_satisfied": false,
+          "searched": true,
+          "rss_matching_reached": false,
+          "batch_executed": false,
+          "finish_after_matching": true,
+          "search_season_episodes": {
+            "1": []
+          },
+          "initial_recognition_cache_argument": false
+        },
+        "retry_calls": [
+          {
+            "source": "themoviedb",
+            "media_id": 123,
+            "cache_argument_supplied": false,
+            "meta_argument_supplied": false
+          }
+        ],
+        "effective_total_before_retry": 3,
+        "config_total_episode_after_resolution": 3,
+        "initial_media_seasons_after_resolution": {},
+        "library_calls": 0,
+        "tv_download_adds": 0,
+        "lack_episode": 0,
+        "progress_writes": [
+          {
+            "lack_episode": 0
+          }
+        ],
+        "completed": true,
+        "history_writes": 1,
+        "pending_guard_applied": false,
+        "remaining_state": null,
+        "completion_check_called": true
+      }
+    },
+    {
+      "name": "empty_dictionary_retry_failure_precise_r",
+      "input": {
+        "entrypoint": "precise",
+        "state": "R",
+        "initial_recognized": true,
+        "primary_seasons": {},
+        "retry_recognized": false,
+        "retry_seasons": null,
+        "library_seasons": null,
+        "manual_total_episode": false,
+        "total_episode": 3,
+        "start_episode": 1,
+        "note": [],
+        "matching_context_count": 0,
+        "completion_cancel": false
+      },
+      "expected": {
+        "resolution": {
+          "satisfied": false,
+          "no_exists": {}
+        },
+        "routing": {
+          "initial_skipped": false,
+          "preflight_satisfied": false,
+          "searched": true,
+          "rss_matching_reached": false,
+          "batch_executed": false,
+          "finish_after_matching": true,
+          "search_season_episodes": {
+            "1": []
+          },
+          "initial_recognition_cache_argument": false
+        },
+        "retry_calls": [
+          {
+            "source": "themoviedb",
+            "media_id": 123,
+            "cache_argument_supplied": false,
+            "meta_argument_supplied": false
+          }
+        ],
+        "effective_total_before_retry": 3,
+        "config_total_episode_after_resolution": 3,
+        "initial_media_seasons_after_resolution": {},
+        "library_calls": 0,
+        "tv_download_adds": 0,
+        "lack_episode": 0,
+        "progress_writes": [
+          {
+            "lack_episode": 0
+          }
+        ],
+        "completed": true,
+        "history_writes": 1,
+        "pending_guard_applied": false,
+        "remaining_state": null,
+        "completion_check_called": true
+      }
+    },
+    {
+      "name": "empty_dictionary_retry_failure_precise_p",
+      "input": {
+        "entrypoint": "precise",
+        "state": "P",
+        "initial_recognized": true,
+        "primary_seasons": {},
+        "retry_recognized": false,
+        "retry_seasons": null,
+        "library_seasons": null,
+        "manual_total_episode": false,
+        "total_episode": 3,
+        "start_episode": 1,
+        "note": [],
+        "matching_context_count": 0,
+        "completion_cancel": false
+      },
+      "expected": {
+        "resolution": {
+          "satisfied": false,
+          "no_exists": {}
+        },
+        "routing": {
+          "initial_skipped": false,
+          "preflight_satisfied": false,
+          "searched": true,
+          "rss_matching_reached": false,
+          "batch_executed": false,
+          "finish_after_matching": true,
+          "search_season_episodes": {
+            "1": []
+          },
+          "initial_recognition_cache_argument": false
+        },
+        "retry_calls": [
+          {
+            "source": "themoviedb",
+            "media_id": 123,
+            "cache_argument_supplied": false,
+            "meta_argument_supplied": false
+          }
+        ],
+        "effective_total_before_retry": 3,
+        "config_total_episode_after_resolution": 3,
+        "initial_media_seasons_after_resolution": {},
+        "library_calls": 0,
+        "tv_download_adds": 0,
+        "lack_episode": 0,
+        "progress_writes": [
+          {
+            "lack_episode": 0
+          }
+        ],
+        "completed": false,
+        "history_writes": 0,
+        "pending_guard_applied": true,
+        "remaining_state": "P",
+        "completion_check_called": false
+      }
+    },
+    {
+      "name": "empty_dictionary_retry_failure_rss_r",
+      "input": {
+        "entrypoint": "rss",
+        "state": "R",
+        "initial_recognized": true,
+        "primary_seasons": {},
+        "retry_recognized": false,
+        "retry_seasons": null,
+        "library_seasons": null,
+        "manual_total_episode": false,
+        "total_episode": 3,
+        "start_episode": 1,
+        "note": [],
+        "matching_context_count": 0,
+        "completion_cancel": false
+      },
+      "expected": {
+        "resolution": {
+          "satisfied": false,
+          "no_exists": {}
+        },
+        "routing": {
+          "initial_skipped": false,
+          "preflight_satisfied": false,
+          "searched": false,
+          "rss_matching_reached": true,
+          "batch_executed": false,
+          "finish_after_matching": true,
+          "search_season_episodes": null,
+          "initial_recognition_cache_argument": false
+        },
+        "retry_calls": [
+          {
+            "source": "themoviedb",
+            "media_id": 123,
+            "cache_argument_supplied": false,
+            "meta_argument_supplied": false
+          }
+        ],
+        "effective_total_before_retry": 3,
+        "config_total_episode_after_resolution": 3,
+        "initial_media_seasons_after_resolution": {},
+        "library_calls": 0,
+        "tv_download_adds": 0,
+        "lack_episode": 0,
+        "progress_writes": [
+          {
+            "lack_episode": 0
+          }
+        ],
+        "completed": true,
+        "history_writes": 1,
+        "pending_guard_applied": false,
+        "remaining_state": null,
+        "completion_check_called": true
+      }
+    },
+    {
+      "name": "empty_dictionary_retry_failure_rss_p",
+      "input": {
+        "entrypoint": "rss",
+        "state": "P",
+        "initial_recognized": true,
+        "primary_seasons": {},
+        "retry_recognized": false,
+        "retry_seasons": null,
+        "library_seasons": null,
+        "manual_total_episode": false,
+        "total_episode": 3,
+        "start_episode": 1,
+        "note": [],
+        "matching_context_count": 0,
+        "completion_cancel": false
+      },
+      "expected": {
+        "resolution": {
+          "satisfied": false,
+          "no_exists": {}
+        },
+        "routing": {
+          "initial_skipped": false,
+          "preflight_satisfied": false,
+          "searched": false,
+          "rss_matching_reached": true,
+          "batch_executed": false,
+          "finish_after_matching": true,
+          "search_season_episodes": null,
+          "initial_recognition_cache_argument": false
+        },
+        "retry_calls": [
+          {
+            "source": "themoviedb",
+            "media_id": 123,
+            "cache_argument_supplied": false,
+            "meta_argument_supplied": false
+          }
+        ],
+        "effective_total_before_retry": 3,
+        "config_total_episode_after_resolution": 3,
+        "initial_media_seasons_after_resolution": {},
+        "library_calls": 0,
+        "tv_download_adds": 0,
+        "lack_episode": 0,
+        "progress_writes": [
+          {
+            "lack_episode": 0
+          }
+        ],
+        "completed": false,
+        "history_writes": 0,
+        "pending_guard_applied": true,
+        "remaining_state": "P",
+        "completion_check_called": false
+      }
+    },
+    {
+      "name": "retry_recognized_but_still_empty",
+      "input": {
+        "entrypoint": "precise",
+        "state": "N",
+        "initial_recognized": true,
+        "primary_seasons": {},
+        "retry_recognized": true,
+        "retry_seasons": {},
+        "library_seasons": null,
+        "manual_total_episode": false,
+        "total_episode": 3,
+        "start_episode": 1,
+        "note": [],
+        "matching_context_count": 0,
+        "completion_cancel": false
+      },
+      "expected": {
+        "resolution": {
+          "satisfied": false,
+          "no_exists": {}
+        },
+        "routing": {
+          "initial_skipped": false,
+          "preflight_satisfied": false,
+          "searched": true,
+          "rss_matching_reached": false,
+          "batch_executed": false,
+          "finish_after_matching": true,
+          "search_season_episodes": {
+            "1": []
+          },
+          "initial_recognition_cache_argument": false
+        },
+        "retry_calls": [
+          {
+            "source": "themoviedb",
+            "media_id": 123,
+            "cache_argument_supplied": false,
+            "meta_argument_supplied": false
+          }
+        ],
+        "effective_total_before_retry": 3,
+        "config_total_episode_after_resolution": 3,
+        "initial_media_seasons_after_resolution": {},
+        "library_calls": 0,
+        "tv_download_adds": 0,
+        "lack_episode": 0,
+        "progress_writes": [
+          {
+            "lack_episode": 0
+          }
+        ],
+        "completed": true,
+        "history_writes": 1,
+        "pending_guard_applied": false,
+        "remaining_state": null,
+        "completion_check_called": true
+      }
+    },
+    {
+      "name": "empty_dictionary_recovers_primary_seasons",
+      "input": {
+        "entrypoint": "precise",
+        "state": "N",
+        "initial_recognized": true,
+        "primary_seasons": {},
+        "retry_recognized": true,
+        "retry_seasons": {
+          "1": [
+            1,
+            2,
+            3
+          ]
+        },
+        "library_seasons": null,
+        "manual_total_episode": false,
+        "total_episode": 3,
+        "start_episode": 1,
+        "note": [],
+        "matching_context_count": 0,
+        "completion_cancel": false
+      },
+      "expected": {
+        "resolution": {
+          "satisfied": false,
+          "no_exists": {
+            "themoviedb:123": {
+              "1": {
+                "season": 1,
+                "episodes": [],
+                "total_episode": 3,
+                "start_episode": 1,
+                "require_complete_coverage": false
+              }
+            }
+          }
+        },
+        "routing": {
+          "initial_skipped": false,
+          "preflight_satisfied": false,
+          "searched": true,
+          "rss_matching_reached": false,
+          "batch_executed": false,
+          "finish_after_matching": true,
+          "search_season_episodes": {
+            "1": []
+          },
+          "initial_recognition_cache_argument": false
+        },
+        "retry_calls": [
+          {
+            "source": "themoviedb",
+            "media_id": 123,
+            "cache_argument_supplied": false,
+            "meta_argument_supplied": false
+          }
+        ],
+        "effective_total_before_retry": 3,
+        "config_total_episode_after_resolution": 3,
+        "initial_media_seasons_after_resolution": {},
+        "library_calls": 1,
+        "tv_download_adds": 0,
+        "lack_episode": 3,
+        "progress_writes": [
+          {
+            "lack_episode": 3
+          }
+        ],
+        "completed": false,
+        "history_writes": 0,
+        "pending_guard_applied": false,
+        "remaining_state": "R",
+        "completion_check_called": false
+      }
+    },
+    {
+      "name": "zero_initial_count_zero_config_recovers_count_three",
+      "input": {
+        "entrypoint": "precise",
+        "state": "N",
+        "initial_recognized": true,
+        "primary_seasons": {},
+        "retry_recognized": true,
+        "retry_seasons": {
+          "1": [
+            1,
+            2,
+            3
+          ]
+        },
+        "library_seasons": null,
+        "manual_total_episode": false,
+        "total_episode": 0,
+        "start_episode": 1,
+        "note": [],
+        "matching_context_count": 0,
+        "completion_cancel": false
+      },
+      "expected": {
+        "resolution": {
+          "satisfied": false,
+          "no_exists": {
+            "themoviedb:123": {
+              "1": {
+                "season": 1,
+                "episodes": [],
+                "total_episode": 3,
+                "start_episode": 1,
+                "require_complete_coverage": false
+              }
+            }
+          }
+        },
+        "routing": {
+          "initial_skipped": false,
+          "preflight_satisfied": false,
+          "searched": true,
+          "rss_matching_reached": false,
+          "batch_executed": false,
+          "finish_after_matching": true,
+          "search_season_episodes": {
+            "1": []
+          },
+          "initial_recognition_cache_argument": false
+        },
+        "retry_calls": [
+          {
+            "source": "themoviedb",
+            "media_id": 123,
+            "cache_argument_supplied": false,
+            "meta_argument_supplied": false
+          }
+        ],
+        "effective_total_before_retry": 0,
+        "config_total_episode_after_resolution": 0,
+        "initial_media_seasons_after_resolution": {},
+        "library_calls": 1,
+        "tv_download_adds": 0,
+        "lack_episode": 3,
+        "progress_writes": [
+          {
+            "lack_episode": 3
+          }
+        ],
+        "completed": false,
+        "history_writes": 0,
+        "pending_guard_applied": false,
+        "remaining_state": "R",
+        "completion_check_called": false
+      }
+    },
+    {
+      "name": "zero_initial_count_old_two_recovers_count_three",
+      "input": {
+        "entrypoint": "precise",
+        "state": "N",
+        "initial_recognized": true,
+        "primary_seasons": {},
+        "retry_recognized": true,
+        "retry_seasons": {
+          "1": [
+            1,
+            2,
+            3
+          ]
+        },
+        "library_seasons": null,
+        "manual_total_episode": false,
+        "total_episode": 2,
+        "start_episode": 1,
+        "note": [],
+        "matching_context_count": 0,
+        "completion_cancel": false
+      },
+      "expected": {
+        "resolution": {
+          "satisfied": false,
+          "no_exists": {
+            "themoviedb:123": {
+              "1": {
+                "season": 1,
+                "episodes": [],
+                "total_episode": 2,
+                "start_episode": 1,
+                "require_complete_coverage": false
+              }
+            }
+          }
+        },
+        "routing": {
+          "initial_skipped": false,
+          "preflight_satisfied": false,
+          "searched": true,
+          "rss_matching_reached": false,
+          "batch_executed": false,
+          "finish_after_matching": true,
+          "search_season_episodes": {
+            "1": []
+          },
+          "initial_recognition_cache_argument": false
+        },
+        "retry_calls": [
+          {
+            "source": "themoviedb",
+            "media_id": 123,
+            "cache_argument_supplied": false,
+            "meta_argument_supplied": false
+          }
+        ],
+        "effective_total_before_retry": 2,
+        "config_total_episode_after_resolution": 2,
+        "initial_media_seasons_after_resolution": {},
+        "library_calls": 1,
+        "tv_download_adds": 0,
+        "lack_episode": 2,
+        "progress_writes": [
+          {
+            "lack_episode": 2
+          }
+        ],
+        "completed": false,
+        "history_writes": 0,
+        "pending_guard_applied": false,
+        "remaining_state": "R",
+        "completion_check_called": false
+      }
+    },
+    {
+      "name": "zero_target_count_zero_config_does_not_retry",
+      "input": {
+        "entrypoint": "precise",
+        "state": "N",
+        "initial_recognized": true,
+        "primary_seasons": {
+          "1": []
+        },
+        "retry_recognized": false,
+        "retry_seasons": null,
+        "library_seasons": null,
+        "manual_total_episode": false,
+        "total_episode": 0,
+        "start_episode": 1,
+        "note": [],
+        "matching_context_count": 0,
+        "completion_cancel": false
+      },
+      "expected": {
+        "resolution": {
+          "satisfied": false,
+          "no_exists": {}
+        },
+        "routing": {
+          "initial_skipped": false,
+          "preflight_satisfied": false,
+          "searched": true,
+          "rss_matching_reached": false,
+          "batch_executed": false,
+          "finish_after_matching": true,
+          "search_season_episodes": {
+            "1": []
+          },
+          "initial_recognition_cache_argument": false
+        },
+        "retry_calls": [],
+        "effective_total_before_retry": 0,
+        "config_total_episode_after_resolution": 0,
+        "initial_media_seasons_after_resolution": {
+          "1": []
+        },
+        "library_calls": 1,
+        "tv_download_adds": 0,
+        "lack_episode": 0,
+        "progress_writes": [
+          {
+            "lack_episode": 0
+          }
+        ],
+        "completed": true,
+        "history_writes": 1,
+        "pending_guard_applied": false,
+        "remaining_state": null,
+        "completion_check_called": true
+      }
+    },
+    {
+      "name": "manual_total_still_retries_missing_seasons",
+      "input": {
+        "entrypoint": "precise",
+        "state": "N",
+        "initial_recognized": true,
+        "primary_seasons": {},
+        "retry_recognized": false,
+        "retry_seasons": null,
+        "library_seasons": null,
+        "manual_total_episode": true,
+        "total_episode": 4,
+        "start_episode": 1,
+        "note": [],
+        "matching_context_count": 0,
+        "completion_cancel": false
+      },
+      "expected": {
+        "resolution": {
+          "satisfied": false,
+          "no_exists": {}
+        },
+        "routing": {
+          "initial_skipped": false,
+          "preflight_satisfied": false,
+          "searched": true,
+          "rss_matching_reached": false,
+          "batch_executed": false,
+          "finish_after_matching": true,
+          "search_season_episodes": {
+            "1": []
+          },
+          "initial_recognition_cache_argument": false
+        },
+        "retry_calls": [
+          {
+            "source": "themoviedb",
+            "media_id": 123,
+            "cache_argument_supplied": false,
+            "meta_argument_supplied": false
+          }
+        ],
+        "effective_total_before_retry": 4,
+        "config_total_episode_after_resolution": 4,
+        "initial_media_seasons_after_resolution": {},
+        "library_calls": 0,
+        "tv_download_adds": 0,
+        "lack_episode": 0,
+        "progress_writes": [
+          {
+            "lack_episode": 0
+          }
+        ],
+        "completed": true,
+        "history_writes": 1,
+        "pending_guard_applied": false,
+        "remaining_state": null,
+        "completion_check_called": true
+      }
+    },
+    {
+      "name": "manual_total_and_note_do_not_build_missing_target",
+      "input": {
+        "entrypoint": "precise",
+        "state": "N",
+        "initial_recognized": true,
+        "primary_seasons": {},
+        "retry_recognized": false,
+        "retry_seasons": null,
+        "library_seasons": null,
+        "manual_total_episode": true,
+        "total_episode": 3,
+        "start_episode": 1,
+        "note": [
+          1,
+          2
+        ],
+        "matching_context_count": 0,
+        "completion_cancel": false
+      },
+      "expected": {
+        "resolution": {
+          "satisfied": false,
+          "no_exists": {}
+        },
+        "routing": {
+          "initial_skipped": false,
+          "preflight_satisfied": false,
+          "searched": true,
+          "rss_matching_reached": false,
+          "batch_executed": false,
+          "finish_after_matching": true,
+          "search_season_episodes": {
+            "1": []
+          },
+          "initial_recognition_cache_argument": false
+        },
+        "retry_calls": [
+          {
+            "source": "themoviedb",
+            "media_id": 123,
+            "cache_argument_supplied": false,
+            "meta_argument_supplied": false
+          }
+        ],
+        "effective_total_before_retry": 3,
+        "config_total_episode_after_resolution": 3,
+        "initial_media_seasons_after_resolution": {},
+        "library_calls": 0,
+        "tv_download_adds": 0,
+        "lack_episode": 0,
+        "progress_writes": [
+          {
+            "lack_episode": 0
+          }
+        ],
+        "completed": true,
+        "history_writes": 1,
+        "pending_guard_applied": false,
+        "remaining_state": null,
+        "completion_check_called": true
+      }
+    },
+    {
+      "name": "manual_total_retry_recovers_and_keeps_configured_range",
+      "input": {
+        "entrypoint": "precise",
+        "state": "N",
+        "initial_recognized": true,
+        "primary_seasons": {},
+        "retry_recognized": true,
+        "retry_seasons": {
+          "1": [
+            1,
+            2
+          ]
+        },
+        "library_seasons": null,
+        "manual_total_episode": true,
+        "total_episode": 4,
+        "start_episode": 1,
+        "note": [],
+        "matching_context_count": 0,
+        "completion_cancel": false
+      },
+      "expected": {
+        "resolution": {
+          "satisfied": false,
+          "no_exists": {
+            "themoviedb:123": {
+              "1": {
+                "season": 1,
+                "episodes": [],
+                "total_episode": 4,
+                "start_episode": 1,
+                "require_complete_coverage": false
+              }
+            }
+          }
+        },
+        "routing": {
+          "initial_skipped": false,
+          "preflight_satisfied": false,
+          "searched": true,
+          "rss_matching_reached": false,
+          "batch_executed": false,
+          "finish_after_matching": true,
+          "search_season_episodes": {
+            "1": []
+          },
+          "initial_recognition_cache_argument": false
+        },
+        "retry_calls": [
+          {
+            "source": "themoviedb",
+            "media_id": 123,
+            "cache_argument_supplied": false,
+            "meta_argument_supplied": false
+          }
+        ],
+        "effective_total_before_retry": 4,
+        "config_total_episode_after_resolution": 4,
+        "initial_media_seasons_after_resolution": {},
+        "library_calls": 1,
+        "tv_download_adds": 0,
+        "lack_episode": 4,
+        "progress_writes": [
+          {
+            "lack_episode": 4
+          }
+        ],
+        "completed": false,
+        "history_writes": 0,
+        "pending_guard_applied": false,
+        "remaining_state": "R",
+        "completion_check_called": false
+      }
+    },
+    {
+      "name": "target_empty_list_does_not_retry",
+      "input": {
+        "entrypoint": "precise",
+        "state": "N",
+        "initial_recognized": true,
+        "primary_seasons": {
+          "1": []
+        },
+        "retry_recognized": false,
+        "retry_seasons": null,
+        "library_seasons": null,
+        "manual_total_episode": false,
+        "total_episode": 3,
+        "start_episode": 1,
+        "note": [],
+        "matching_context_count": 0,
+        "completion_cancel": false
+      },
+      "expected": {
+        "resolution": {
+          "satisfied": false,
+          "no_exists": {}
+        },
+        "routing": {
+          "initial_skipped": false,
+          "preflight_satisfied": false,
+          "searched": true,
+          "rss_matching_reached": false,
+          "batch_executed": false,
+          "finish_after_matching": true,
+          "search_season_episodes": {
+            "1": []
+          },
+          "initial_recognition_cache_argument": false
+        },
+        "retry_calls": [],
+        "effective_total_before_retry": 3,
+        "config_total_episode_after_resolution": 3,
+        "initial_media_seasons_after_resolution": {
+          "1": []
+        },
+        "library_calls": 1,
+        "tv_download_adds": 0,
+        "lack_episode": 0,
+        "progress_writes": [
+          {
+            "lack_episode": 0
+          }
+        ],
+        "completed": true,
+        "history_writes": 1,
+        "pending_guard_applied": false,
+        "remaining_state": null,
+        "completion_check_called": true
+      }
+    },
+    {
+      "name": "target_empty_list_with_library_reports_satisfied",
+      "input": {
+        "entrypoint": "precise",
+        "state": "N",
+        "initial_recognized": true,
+        "primary_seasons": {
+          "1": []
+        },
+        "retry_recognized": false,
+        "retry_seasons": null,
+        "library_seasons": {
+          "1": [
+            9
+          ]
+        },
+        "manual_total_episode": false,
+        "total_episode": 3,
+        "start_episode": 1,
+        "note": [],
+        "matching_context_count": 0,
+        "completion_cancel": false
+      },
+      "expected": {
+        "resolution": {
+          "satisfied": true,
+          "no_exists": {}
+        },
+        "routing": {
+          "initial_skipped": false,
+          "preflight_satisfied": true,
+          "searched": false,
+          "rss_matching_reached": false,
+          "batch_executed": false,
+          "finish_after_matching": false,
+          "search_season_episodes": null,
+          "initial_recognition_cache_argument": false
+        },
+        "retry_calls": [],
+        "effective_total_before_retry": 3,
+        "config_total_episode_after_resolution": 3,
+        "initial_media_seasons_after_resolution": {
+          "1": []
+        },
+        "library_calls": 1,
+        "tv_download_adds": 0,
+        "lack_episode": 0,
+        "progress_writes": [
+          {
+            "lack_episode": 0
+          }
+        ],
+        "completed": true,
+        "history_writes": 1,
+        "pending_guard_applied": false,
+        "remaining_state": null,
+        "completion_check_called": true
+      }
+    },
+    {
+      "name": "target_empty_list_with_other_library_reports_satisfied",
+      "input": {
+        "entrypoint": "precise",
+        "state": "N",
+        "initial_recognized": true,
+        "primary_seasons": {
+          "1": []
+        },
+        "retry_recognized": false,
+        "retry_seasons": null,
+        "library_seasons": {
+          "2": [
+            1
+          ]
+        },
+        "manual_total_episode": false,
+        "total_episode": 3,
+        "start_episode": 1,
+        "note": [],
+        "matching_context_count": 0,
+        "completion_cancel": false
+      },
+      "expected": {
+        "resolution": {
+          "satisfied": true,
+          "no_exists": {}
+        },
+        "routing": {
+          "initial_skipped": false,
+          "preflight_satisfied": true,
+          "searched": false,
+          "rss_matching_reached": false,
+          "batch_executed": false,
+          "finish_after_matching": false,
+          "search_season_episodes": null,
+          "initial_recognition_cache_argument": false
+        },
+        "retry_calls": [],
+        "effective_total_before_retry": 3,
+        "config_total_episode_after_resolution": 3,
+        "initial_media_seasons_after_resolution": {
+          "1": []
+        },
+        "library_calls": 1,
+        "tv_download_adds": 0,
+        "lack_episode": 0,
+        "progress_writes": [
+          {
+            "lack_episode": 0
+          }
+        ],
+        "completed": true,
+        "history_writes": 1,
+        "pending_guard_applied": false,
+        "remaining_state": null,
+        "completion_check_called": true
+      }
+    },
+    {
+      "name": "only_other_metadata_season_without_library",
+      "input": {
+        "entrypoint": "precise",
+        "state": "N",
+        "initial_recognized": true,
+        "primary_seasons": {
+          "2": [
+            1,
+            2,
+            3
+          ]
+        },
+        "retry_recognized": false,
+        "retry_seasons": null,
+        "library_seasons": null,
+        "manual_total_episode": false,
+        "total_episode": 3,
+        "start_episode": 1,
+        "note": [],
+        "matching_context_count": 0,
+        "completion_cancel": false
+      },
+      "expected": {
+        "resolution": {
+          "satisfied": false,
+          "no_exists": {}
+        },
+        "routing": {
+          "initial_skipped": false,
+          "preflight_satisfied": false,
+          "searched": true,
+          "rss_matching_reached": false,
+          "batch_executed": false,
+          "finish_after_matching": true,
+          "search_season_episodes": {
+            "1": []
+          },
+          "initial_recognition_cache_argument": false
+        },
+        "retry_calls": [],
+        "effective_total_before_retry": 3,
+        "config_total_episode_after_resolution": 3,
+        "initial_media_seasons_after_resolution": {
+          "2": [
+            1,
+            2,
+            3
+          ]
+        },
+        "library_calls": 1,
+        "tv_download_adds": 0,
+        "lack_episode": 0,
+        "progress_writes": [
+          {
+            "lack_episode": 0
+          }
+        ],
+        "completed": true,
+        "history_writes": 1,
+        "pending_guard_applied": false,
+        "remaining_state": null,
+        "completion_check_called": true
+      }
+    },
+    {
+      "name": "only_other_metadata_season_with_library",
+      "input": {
+        "entrypoint": "precise",
+        "state": "N",
+        "initial_recognized": true,
+        "primary_seasons": {
+          "2": [
+            1,
+            2,
+            3
+          ]
+        },
+        "retry_recognized": false,
+        "retry_seasons": null,
+        "library_seasons": {
+          "2": [
+            1
+          ]
+        },
+        "manual_total_episode": false,
+        "total_episode": 3,
+        "start_episode": 1,
+        "note": [],
+        "matching_context_count": 0,
+        "completion_cancel": false
+      },
+      "expected": {
+        "resolution": {
+          "satisfied": true,
+          "no_exists": {}
+        },
+        "routing": {
+          "initial_skipped": false,
+          "preflight_satisfied": true,
+          "searched": false,
+          "rss_matching_reached": false,
+          "batch_executed": false,
+          "finish_after_matching": false,
+          "search_season_episodes": null,
+          "initial_recognition_cache_argument": false
+        },
+        "retry_calls": [],
+        "effective_total_before_retry": 3,
+        "config_total_episode_after_resolution": 3,
+        "initial_media_seasons_after_resolution": {
+          "2": [
+            1,
+            2,
+            3
+          ]
+        },
+        "library_calls": 1,
+        "tv_download_adds": 0,
+        "lack_episode": 0,
+        "progress_writes": [
+          {
+            "lack_episode": 0
+          }
+        ],
+        "completed": true,
+        "history_writes": 1,
+        "pending_guard_applied": false,
+        "remaining_state": null,
+        "completion_check_called": true
+      }
+    },
+    {
+      "name": "other_library_season_preserves_missing_target",
+      "input": {
+        "entrypoint": "precise",
+        "state": "N",
+        "initial_recognized": true,
+        "primary_seasons": {
+          "1": [
+            1,
+            2,
+            3
+          ]
+        },
+        "retry_recognized": false,
+        "retry_seasons": null,
+        "library_seasons": {
+          "2": [
+            1,
+            2,
+            3
+          ]
+        },
+        "manual_total_episode": false,
+        "total_episode": 3,
+        "start_episode": 1,
+        "note": [],
+        "matching_context_count": 0,
+        "completion_cancel": false
+      },
+      "expected": {
+        "resolution": {
+          "satisfied": false,
+          "no_exists": {
+            "themoviedb:123": {
+              "1": {
+                "season": 1,
+                "episodes": [],
+                "total_episode": 3,
+                "start_episode": 1,
+                "require_complete_coverage": false
+              }
+            }
+          }
+        },
+        "routing": {
+          "initial_skipped": false,
+          "preflight_satisfied": false,
+          "searched": true,
+          "rss_matching_reached": false,
+          "batch_executed": false,
+          "finish_after_matching": true,
+          "search_season_episodes": {
+            "1": []
+          },
+          "initial_recognition_cache_argument": false
+        },
+        "retry_calls": [],
+        "effective_total_before_retry": 3,
+        "config_total_episode_after_resolution": 3,
+        "initial_media_seasons_after_resolution": {
+          "1": [
+            1,
+            2,
+            3
+          ]
+        },
+        "library_calls": 1,
+        "tv_download_adds": 0,
+        "lack_episode": 3,
+        "progress_writes": [
+          {
+            "lack_episode": 3
+          }
+        ],
+        "completed": false,
+        "history_writes": 0,
+        "pending_guard_applied": false,
+        "remaining_state": "R",
+        "completion_check_called": false
+      }
+    },
+    {
+      "name": "known_empty_configured_range_preflight_satisfied",
+      "input": {
+        "entrypoint": "precise",
+        "state": "N",
+        "initial_recognized": true,
+        "primary_seasons": {
+          "1": [
+            1,
+            2,
+            3
+          ]
+        },
+        "retry_recognized": false,
+        "retry_seasons": null,
+        "library_seasons": null,
+        "manual_total_episode": false,
+        "total_episode": 3,
+        "start_episode": 4,
+        "note": [],
+        "matching_context_count": 0,
+        "completion_cancel": false
+      },
+      "expected": {
+        "resolution": {
+          "satisfied": true,
+          "no_exists": {}
+        },
+        "routing": {
+          "initial_skipped": false,
+          "preflight_satisfied": true,
+          "searched": false,
+          "rss_matching_reached": false,
+          "batch_executed": false,
+          "finish_after_matching": false,
+          "search_season_episodes": null,
+          "initial_recognition_cache_argument": false
+        },
+        "retry_calls": [],
+        "effective_total_before_retry": 3,
+        "config_total_episode_after_resolution": 3,
+        "initial_media_seasons_after_resolution": {
+          "1": [
+            1,
+            2,
+            3
+          ]
+        },
+        "library_calls": 1,
+        "tv_download_adds": 0,
+        "lack_episode": 0,
+        "progress_writes": [
+          {
+            "lack_episode": 0
+          }
+        ],
+        "completed": true,
+        "history_writes": 1,
+        "pending_guard_applied": false,
+        "remaining_state": null,
+        "completion_check_called": true
+      }
+    },
+    {
+      "name": "missing_metadata_empty_configured_range_still_false_empty",
+      "input": {
+        "entrypoint": "precise",
+        "state": "N",
+        "initial_recognized": true,
+        "primary_seasons": {},
+        "retry_recognized": false,
+        "retry_seasons": null,
+        "library_seasons": null,
+        "manual_total_episode": false,
+        "total_episode": 3,
+        "start_episode": 4,
+        "note": [],
+        "matching_context_count": 0,
+        "completion_cancel": false
+      },
+      "expected": {
+        "resolution": {
+          "satisfied": false,
+          "no_exists": {}
+        },
+        "routing": {
+          "initial_skipped": false,
+          "preflight_satisfied": false,
+          "searched": true,
+          "rss_matching_reached": false,
+          "batch_executed": false,
+          "finish_after_matching": true,
+          "search_season_episodes": {
+            "1": []
+          },
+          "initial_recognition_cache_argument": false
+        },
+        "retry_calls": [
+          {
+            "source": "themoviedb",
+            "media_id": 123,
+            "cache_argument_supplied": false,
+            "meta_argument_supplied": false
+          }
+        ],
+        "effective_total_before_retry": 3,
+        "config_total_episode_after_resolution": 3,
+        "initial_media_seasons_after_resolution": {},
+        "library_calls": 0,
+        "tv_download_adds": 0,
+        "lack_episode": 0,
+        "progress_writes": [
+          {
+            "lack_episode": 0
+          }
+        ],
+        "completed": true,
+        "history_writes": 1,
+        "pending_guard_applied": false,
+        "remaining_state": null,
+        "completion_check_called": true
+      }
+    },
+    {
+      "name": "empty_missing_matching_tv_context_adds_no_download",
+      "input": {
+        "entrypoint": "precise",
+        "state": "N",
+        "initial_recognized": true,
+        "primary_seasons": {},
+        "retry_recognized": false,
+        "retry_seasons": null,
+        "library_seasons": null,
+        "manual_total_episode": false,
+        "total_episode": 3,
+        "start_episode": 1,
+        "note": [],
+        "matching_context_count": 1,
+        "completion_cancel": false
+      },
+      "expected": {
+        "resolution": {
+          "satisfied": false,
+          "no_exists": {}
+        },
+        "routing": {
+          "initial_skipped": false,
+          "preflight_satisfied": false,
+          "searched": true,
+          "rss_matching_reached": false,
+          "batch_executed": true,
+          "finish_after_matching": true,
+          "search_season_episodes": {
+            "1": []
+          },
+          "initial_recognition_cache_argument": false
+        },
+        "retry_calls": [
+          {
+            "source": "themoviedb",
+            "media_id": 123,
+            "cache_argument_supplied": false,
+            "meta_argument_supplied": false
+          }
+        ],
+        "effective_total_before_retry": 3,
+        "config_total_episode_after_resolution": 3,
+        "initial_media_seasons_after_resolution": {},
+        "library_calls": 0,
+        "tv_download_adds": 0,
+        "lack_episode": 0,
+        "progress_writes": [
+          {
+            "lack_episode": 0
+          }
+        ],
+        "completed": true,
+        "history_writes": 1,
+        "pending_guard_applied": false,
+        "remaining_state": null,
+        "completion_check_called": true
+      }
+    },
+    {
+      "name": "empty_missing_rss_matching_tv_context_adds_no_download",
+      "input": {
+        "entrypoint": "rss",
+        "state": "R",
+        "initial_recognized": true,
+        "primary_seasons": {},
+        "retry_recognized": false,
+        "retry_seasons": null,
+        "library_seasons": null,
+        "manual_total_episode": false,
+        "total_episode": 3,
+        "start_episode": 1,
+        "note": [],
+        "matching_context_count": 1,
+        "completion_cancel": false
+      },
+      "expected": {
+        "resolution": {
+          "satisfied": false,
+          "no_exists": {}
+        },
+        "routing": {
+          "initial_skipped": false,
+          "preflight_satisfied": false,
+          "searched": false,
+          "rss_matching_reached": true,
+          "batch_executed": true,
+          "finish_after_matching": true,
+          "search_season_episodes": null,
+          "initial_recognition_cache_argument": false
+        },
+        "retry_calls": [
+          {
+            "source": "themoviedb",
+            "media_id": 123,
+            "cache_argument_supplied": false,
+            "meta_argument_supplied": false
+          }
+        ],
+        "effective_total_before_retry": 3,
+        "config_total_episode_after_resolution": 3,
+        "initial_media_seasons_after_resolution": {},
+        "library_calls": 0,
+        "tv_download_adds": 0,
+        "lack_episode": 0,
+        "progress_writes": [
+          {
+            "lack_episode": 0
+          }
+        ],
+        "completed": true,
+        "history_writes": 1,
+        "pending_guard_applied": false,
+        "remaining_state": null,
+        "completion_check_called": true
+      }
+    },
+    {
+      "name": "empty_lefts_completion_event_can_veto",
+      "input": {
+        "entrypoint": "precise",
+        "state": "R",
+        "initial_recognized": true,
+        "primary_seasons": {},
+        "retry_recognized": false,
+        "retry_seasons": null,
+        "library_seasons": null,
+        "manual_total_episode": false,
+        "total_episode": 3,
+        "start_episode": 1,
+        "note": [],
+        "matching_context_count": 0,
+        "completion_cancel": true
+      },
+      "expected": {
+        "resolution": {
+          "satisfied": false,
+          "no_exists": {}
+        },
+        "routing": {
+          "initial_skipped": false,
+          "preflight_satisfied": false,
+          "searched": true,
+          "rss_matching_reached": false,
+          "batch_executed": false,
+          "finish_after_matching": true,
+          "search_season_episodes": {
+            "1": []
+          },
+          "initial_recognition_cache_argument": false
+        },
+        "retry_calls": [
+          {
+            "source": "themoviedb",
+            "media_id": 123,
+            "cache_argument_supplied": false,
+            "meta_argument_supplied": false
+          }
+        ],
+        "effective_total_before_retry": 3,
+        "config_total_episode_after_resolution": 3,
+        "initial_media_seasons_after_resolution": {},
+        "library_calls": 0,
+        "tv_download_adds": 0,
+        "lack_episode": 0,
+        "progress_writes": [
+          {
+            "lack_episode": 0
+          }
+        ],
+        "completed": false,
+        "history_writes": 0,
+        "pending_guard_applied": false,
+        "remaining_state": "R",
+        "completion_check_called": true
+      }
+    }
+  ],
+  "auxiliary_cases": [
+    {
+      "name": "empty_primary_seasons_remain_empty_after_tmdb",
+      "input": {
+        "primary_seasons": {},
+        "auxiliary_seasons": {
+          "1": [
+            1,
+            2,
+            3,
+            4
+          ]
+        }
+      },
+      "expected": {
+        "primary_seasons": {},
+        "tmdb_id": 123,
+        "same_primary_object": true
+      }
+    },
+    {
+      "name": "primary_seasons_retained_after_tmdb",
+      "input": {
+        "primary_seasons": {
+          "1": [
+            1,
+            2
+          ]
+        },
+        "auxiliary_seasons": {
+          "1": [
+            1,
+            2,
+            3,
+            4
+          ]
+        }
+      },
+      "expected": {
+        "primary_seasons": {
+          "1": [
+            1,
+            2
+          ]
+        },
+        "tmdb_id": 123,
+        "same_primary_object": true
+      }
+    }
+  ],
+  "contracts": [
+    "初始识别失败：精准入口不搜索、不查询缺集、不刷新进度；已进入处理的 N 在 finally 转 R，R/P 保持；RSS 保持 R/P。",
+    "初始识别成功但整个 seasons 字典为空：DownloadChain 使用主源身份补认一次；未传 meta 或 cache 参数，cache 沿用原方法默认值；手工 total 和 note 不能绕过该补认或凭空建立缺集。",
+    "精准/RSS 初始识别显式 cache=False；DownloadChain 补认未传 meta，TMDB 模块在无 meta 时不读取识别缓存，直接凭原生 ID 查询详情。该证据只指原版 TMDB 识别缓存，不推断所有 HTTP 缓存。",
+    "ChainBase 以 fresh(not cache) 调用原生模块；初始 cache=False 回源后仍可写入底层 API 缓存，补认 cache=True 不强制 fresh。TMDB request 的默认缓存可命中上一轮成功详情，因此无 meta 绕过识别缓存不代表补认必然二次网络回源。Go 初始 DetailFresh、补认普通 Detail 保留此缓存顺序。",
+    "有效总数在缺季集补认前用初始媒体计算。初始空字典、旧总数 0、补认恢复 count=3 时，get_no_exists_info 使用恢复计数得到缺集 total=3，但 subscribe.total_episode 保持 0；旧总数 2 时传 totals={1:2}，补认 count=3 后仍得到缺集 total=2、配置总数 2。补认不回写外层初始媒体的 seasons，也不触发当轮配置增长。",
+    "seasons 字典非空但目标季为空列表或不存在，不属于整字典缺失，不触发上述补认；按原版库事实分支可能返回 False+{} 或 True+{}。",
+    "普通 resolve 返回 False+{}：精准继续搜索，RSS 继续匹配；空 no_exists 不过滤集号，TV 批下载的三个阶段都不运行，添加数为 0。",
+    "空 lefts 的普通 TV 最终先写 lack_episode=0，再尝试完成；N/R 可完成入历史并删除，P 仅写进度不完成；完成事件仍可否决。resolve 的 satisfied=False 不等价于外层禁止完成。",
+    "resolve 返回 True+{}：外层在搜索/匹配之前调用 force 完成；P 仍由终态保护拒绝完成。已知空范围和缺元数据的 False+{} 是不同阶段结果。",
+    "辅助 TMDB merge 可以补兼容身份和分类，不能补主源缺失 seasons；不引入主源计数缺失时的辅助季集 fallback。"
+  ],
+  "limitations": [
+    "执行原版 AST 方法；日志、媒体库、主源补认、下载器添加、数据库、通知、事件和进度写入边界均为离线桩，没有真实副作用。",
+    "初始识别的 continue 及精准 finally 条件直接求值冻结 AST；完整精准/RSS 网络入口不执行，其路由由锁定源码摘录支持。",
+    "资源匹配结果数量为输入；非空 no_exists 的用例仅模拟无匹配资源，空 no_exists 的用例运行原版 batch_download 验证零 TV 添加。",
+    "SearchChain 若缺 names 还可能单独为别名补认；这是搜索阶段的另一目的调用，不计入 DownloadChain 的缺季集单次补认，也不会改写既有 no_exists。",
+    "本片只覆盖普通 TV；洗版的 pending/优先级解析不受本契约推断。没有添加 unknown 不能完成的自创保护。",
+    "集合结果只在输出时排序；时间戳不进入夹具，输出使用 UTF-8 与 LF，可逐字节重复生成。"
+  ]
+}

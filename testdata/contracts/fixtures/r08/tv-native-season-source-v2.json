@@ -1,0 +1,179 @@
+{
+  "schema_version": 1,
+  "scope": "R08 普通 TV 缺集形态补查：冻结 V2 四个原生识别源、TMDB 剧集组及自定义插件的季集编号来源。仅保存源码摘录与校验事实。",
+  "frozen_baseline": {
+    "repository": "https://github.com/jxxghp/MoviePilot",
+    "version": "v2.15.6",
+    "commit": "458c08a137bedb4c2acebcfbbf7f6c23ef35bfbf",
+    "git_tree": "81949b6c8a2f93b7ca36b10c0faa39c3edd94517",
+    "tree_evidence_path": "docs/contracts/baselines/2026-09-13/official-v2/github-tree-recursive-response.json",
+    "tree_evidence_sha256": "7ffaf15811c436c57593811ff24be245a9f6d471948387017066eb2f7d07cbb3",
+    "commit_evidence_path": "docs/contracts/baselines/2026-09-13/official-v2/github-commit-response.json",
+    "git_blob_formula": "SHA1(b\"blob \" + ASCII(byte_length) + b\"\\0\" + original_file_bytes)"
+  },
+  "sources": [
+    {
+      "path": "app/core/context.py",
+      "source_path": "D:/Projects/moviepilot_v2/app/core/context.py",
+      "verification": "本地原版文件逐个与冻结 GitHub tree 的 Git blob 完全一致；不据此推断本地仓库整体 Git 身份。",
+      "official_git_blob": "13419c2da9b248ea77744e846df45f2bd2fecbfe",
+      "computed_git_blob": "13419c2da9b248ea77744e846df45f2bd2fecbfe",
+      "git_blob_matches_frozen_tree": true,
+      "sha256": "70a088bd54c748ab44ec467e6a1f1fc5bb5368f818bb16288eca0d15cf98877e",
+      "size_bytes": 41006,
+      "excerpts": [
+        {
+          "id": "tmdb_native_count_expansion",
+          "start_line": 562,
+          "end_line": 571,
+          "source": "            if info.get('seasons'):\n                self.season_info = info.get('seasons')\n                for seainfo in info.get('seasons'):\n                    # 季\n                    season = seainfo.get(\"season_number\")\n                    if season is None:\n                        continue\n                    # 集\n                    episode_count = seainfo.get(\"episode_count\")\n                    self.seasons[season] = list(range(1, episode_count + 1))",
+          "conclusion": "TMDB 原生 MediaInfo 使用电视剧详情 seasons 中的 episode_count，将每季编号展开为 1..N；此处不读取季详情的真实 episode_number。"
+        },
+        {
+          "id": "douban_native_count_expansion",
+          "start_line": 707,
+          "end_line": 712,
+          "source": "        if self.type == MediaType.TV and not self.seasons:\n            meta = MetaInfo(info.get(\"title\"))\n            season = meta.begin_season if meta.begin_season is not None else 1\n            episodes_count = info.get(\"episodes_count\")\n            if episodes_count:\n                self.seasons[season] = list(range(1, episodes_count + 1))",
+          "conclusion": "Douban 使用 episodes_count 展开 1..N；季取标题解析得到的 begin_season，缺省为 1。"
+        },
+        {
+          "id": "bangumi_native_count_expansion",
+          "start_line": 819,
+          "end_line": 826,
+          "source": "        if self.type == MediaType.TV and not self.seasons:\n            meta = MetaInfo(self.title)\n            season = meta.begin_season if meta.begin_season is not None else 1\n            episodes_count = info.get(\"total_episodes\") or info.get(\"eps\")\n            if episodes_count:\n                self.seasons[season] = list(range(1, episodes_count + 1))\n                self.number_of_episodes = episodes_count\n                self.number_of_seasons = 1",
+          "conclusion": "Bangumi 使用 total_episodes 或 eps 展开 1..N；季取标题解析得到的 begin_season，缺省为 1。"
+        },
+        {
+          "id": "anilist_native_count_expansion",
+          "start_line": 993,
+          "end_line": 1000,
+          "source": "        if self.season is None:\n            self.season = MetaInfo(self.title).begin_season if self.title else None\n        episodes_count = info.get(\"episodes\")\n        if self.type == MediaType.TV and episodes_count:\n            season = self.season if self.season is not None else 1\n            self.seasons[season] = list(range(1, episodes_count + 1))\n            self.number_of_episodes = episodes_count\n            self.number_of_seasons = 1",
+          "conclusion": "AniList 使用 episodes 展开 1..N；季取已有 season 或标题解析结果，缺省为 1。"
+        }
+      ]
+    },
+    {
+      "path": "app/modules/themoviedb/tmdbapi.py",
+      "source_path": "D:/Projects/moviepilot_v2/app/modules/themoviedb/tmdbapi.py",
+      "verification": "本地原版文件逐个与冻结 GitHub tree 的 Git blob 完全一致；不据此推断本地仓库整体 Git 身份。",
+      "official_git_blob": "1be2f4fc37dc7e36f111d78c781e0946f74a0b2e",
+      "computed_git_blob": "1be2f4fc37dc7e36f111d78c781e0946f74a0b2e",
+      "git_blob_matches_frozen_tree": true,
+      "sha256": "6606d2cee1c26780386e96798a0b2dd779dcde1d9b6c78c20ff69b95d6048585",
+      "size_bytes": 85048,
+      "excerpts": [
+        {
+          "id": "tmdb_episode_group_renumbering",
+          "start_line": 1393,
+          "end_line": 1415,
+          "source": "    def get_tv_group_seasons(self, group_id: str) -> List[dict]:\n        \"\"\"\n        获取电视剧剧集组季集列表\n        \"\"\"\n        if not self.tv:\n            return []\n        try:\n            logger.debug(f\"正在获取剧集组：{group_id}...\")\n            group_seasons = self.tv.group_episodes(group_id) or []\n            return [\n                {\n                    **group_season,\n                    \"episodes\": [\n                        {**ep, \"episode_number\": idx}\n                        # 剧集组中每个季的episode_number从1开始\n                        for idx, ep in enumerate(group_season.get(\"episodes\", []), start=1)\n                    ]\n                }\n                for group_season in group_seasons\n            ]\n        except Exception as e:\n            logger.error(str(e))\n            return []",
+          "conclusion": "剧集组返回值按每组 episodes 的既有顺序 enumerate(start=1)，强制覆盖每个 episode_number；每个组的编号都是 1..N，不沿用原始自然起点或稀疏编号。"
+        }
+      ]
+    },
+    {
+      "path": "app/modules/themoviedb/__init__.py",
+      "source_path": "D:/Projects/moviepilot_v2/app/modules/themoviedb/__init__.py",
+      "verification": "本地原版文件逐个与冻结 GitHub tree 的 Git blob 完全一致；不据此推断本地仓库整体 Git 身份。",
+      "official_git_blob": "3dcd30428eac5b75c76a0c4e7409cde1cf4400d9",
+      "computed_git_blob": "3dcd30428eac5b75c76a0c4e7409cde1cf4400d9",
+      "git_blob_matches_frozen_tree": true,
+      "sha256": "383dee3ab7ae88a569b1b772cd86731a64d9f624b384c011338ef55d78ac44d6",
+      "size_bytes": 59163,
+      "excerpts": [
+        {
+          "id": "tmdb_episode_group_season_mapping",
+          "start_line": 139,
+          "end_line": 155,
+          "source": "        for group_season in group_seasons:\n            # 季\n            season = group_season.get(\"order\")\n            # 集列表\n            episodes = group_season.get(\"episodes\")\n            if not episodes:\n                continue\n            seasons[season] = [ep.get(\"episode_number\") for ep in episodes]\n            season_info.append(group_season)\n            # 当前季第一集时间\n            first_date = episodes[0].get(\"air_date\")\n            if first_date and _DATE_RE.match(first_date):\n                season_years[season] = str(first_date).split(\"-\")[0]\n        # 每季集清单\n        if seasons:\n            mediainfo.seasons = seasons\n            mediainfo.number_of_seasons = len(seasons)",
+          "conclusion": "剧集组用 group_season.order 作为季号，将重编号后的 episode_number 写入 MediaInfo.seasons；非空结果覆盖常规 seasons。"
+        },
+        {
+          "id": "tmdb_episode_group_override_condition",
+          "start_line": 347,
+          "end_line": 354,
+          "source": "    def _process_episode_groups(self, mediainfo: MediaInfo, episode_group: Optional[str],\n                                group_seasons: List[dict]) -> MediaInfo:\n        \"\"\"\n        处理剧集组信息\n        \"\"\"\n        if mediainfo.type == MediaType.TV and mediainfo.episode_groups:\n            if group_seasons:\n                self._fill_group_season_info(mediainfo, episode_group, group_seasons)",
+          "conclusion": "覆盖要求 TV 的 MediaInfo 含 episode_groups 且请求得到非空 group_seasons；不是从普通季详情编号推导。"
+        },
+        {
+          "id": "tmdb_native_media_construction",
+          "start_line": 422,
+          "end_line": 435,
+          "source": "        # 赋值TMDB信息并返回\n        mediainfo = MediaInfo(tmdb_info=info)\n        mediainfo.set_category(cat)\n\n        if meta:\n            logger.info(f\"{meta.name} TMDB识别结果：{mediainfo.type.value} \"\n                        f\"{mediainfo.title_year} \"\n                        f\"{mediainfo.tmdb_id}\")\n        else:\n            logger.info(f\"{tmdbid} TMDB识别结果：{mediainfo.type.value} \"\n                        f\"{mediainfo.title_year}\")\n\n        # 处理剧集组信息\n        return self._process_episode_groups(mediainfo, episode_group, group_seasons)",
+          "conclusion": "普通识别构造 MediaInfo(tmdb_info=info)，再处理可用剧集组；普通 MediaInfo 的 seasons 来自 context.py 中的 count 展开。"
+        },
+        {
+          "id": "tmdb_episode_group_request",
+          "start_line": 493,
+          "end_line": 496,
+          "source": "        # 查询剧集组\n        group_seasons = []\n        if episode_group:\n            group_seasons = self.tmdb.get_tv_group_seasons(episode_group)",
+          "conclusion": "只有显式 episode_group 请求才读取指定剧集组季集。"
+        },
+        {
+          "id": "tmdb_episode_details_separate_capability",
+          "start_line": 972,
+          "end_line": 985,
+          "source": "    def tmdb_episodes(self, tmdbid: int, season: int, episode_group: Optional[str] = None) -> List[schemas.TmdbEpisode]:\n        \"\"\"\n        根据TMDBID查询某季的所有集信息\n        :param tmdbid:  TMDBID\n        :param season:  季\n        :param episode_group:  剧集组\n        \"\"\"\n        if episode_group:\n            season_info = self.tmdb.get_tv_group_detail(episode_group, season=season)\n        else:\n            season_info = self.tmdb.get_tv_season_detail(tmdbid=tmdbid, season=season)\n        if not season_info or not season_info.get(\"episodes\"):\n            return []\n        return [schemas.TmdbEpisode(**episode) for episode in season_info.get(\"episodes\")]",
+          "conclusion": "tmdb_episodes 是单独读取季详情或剧集组详情的能力；不能据此认为普通 MediaInfo.seasons 使用季详情真实编号。"
+        }
+      ]
+    },
+    {
+      "path": "app/chain/__init__.py",
+      "source_path": "D:/Projects/moviepilot_v2/app/chain/__init__.py",
+      "verification": "本地原版文件逐个与冻结 GitHub tree 的 Git blob 完全一致；不据此推断本地仓库整体 Git 身份。",
+      "official_git_blob": "062b04d3f302c7f653d43a29201054420d8f2c56",
+      "computed_git_blob": "062b04d3f302c7f653d43a29201054420d8f2c56",
+      "git_blob_matches_frozen_tree": true,
+      "sha256": "167f3c50133bc7cd2a57af4d79c51b3a19905a05340df77ceb30714e92db8eb9",
+      "size_bytes": 75050,
+      "excerpts": [
+        {
+          "id": "recognition_plugin_dispatch",
+          "start_line": 304,
+          "end_line": 320,
+          "source": "        for plugin, module_dict in self.pluginmanager.get_plugin_modules().items():\n            plugin_id, plugin_name = plugin\n            if method in module_dict:\n                func = module_dict[method]\n                if func:\n                    try:\n                        logger.info(f\"请求插件 {plugin_name} 执行：{method} ...\")\n                        if self.__is_valid_empty(result):\n                            # 返回None，第一次执行或者需继续执行下一模块\n                            result = func(*args, **kwargs)\n                        elif isinstance(result, list):\n                            # 返回为列表，有多个模块运行结果时进行合并\n                            temp = func(*args, **kwargs)\n                            if isinstance(temp, list):\n                                result.extend(temp)\n                        else:\n                            break",
+          "conclusion": "recognize_media 同其他模块方法一样可由已注册插件执行；插件返回对象可以携带自定义 MediaInfo.seasons。"
+        },
+        {
+          "id": "plugin_result_bypasses_native_module",
+          "start_line": 482,
+          "end_line": 490,
+          "source": "        # 执行插件模块\n        result = self.__execute_plugin_modules(method, None, *args, **kwargs)\n\n        if not self.__is_valid_empty(result) and not isinstance(result, list):\n            # 插件模块返回结果不为空且不是列表，直接返回\n            return result\n\n        # 执行系统模块\n        return self.__execute_system_modules(method, result, *args, **kwargs)",
+          "conclusion": "插件非空且非列表的结果直接返回，不经过原生系统模块重新展开编号。"
+        },
+        {
+          "id": "recognition_result_return",
+          "start_line": 702,
+          "end_line": 714,
+          "source": "        with fresh(not cache):\n            mediainfo = self.run_module(\n                \"recognize_media\",\n                **module_kwargs,\n            )\n        if mediainfo:\n            if not mediainfo.recognize_cache_hit:\n                MoviePilotServerHelper.report_recognize_share(\n                    meta=meta,\n                    mediainfo=mediainfo,\n                    keyword_meta=share_query_meta,\n                )\n            return mediainfo",
+          "conclusion": "recognize_media 使用 run_module 的结果并直接返回 MediaInfo；因此自然起点不为 1 或稀疏列表属于泛化或插件输入边界。"
+        }
+      ]
+    }
+  ],
+  "conclusions": [
+    {
+      "classification": "native_count_expansion",
+      "statement": "冻结 V2 的 TMDB、Douban、Bangumi、AniList 原生 MediaInfo.seasons 均使用 count 展开 1..N。自然起点 2 或稀疏编号不是这四个原生源的既有输出，不能登记为本片四源编号未迁移。"
+    },
+    {
+      "classification": "episode_group_separate_capability",
+      "statement": "冻结 V2 的 TMDB 剧集组将组内编号重写为 1..N，组 order 提供季号。Go 本片普通缺集 shape 改动没有实现 episode_group 识别消费；该能力保持独立未实现项，不能宣称已闭合。"
+    },
+    {
+      "classification": "custom_plugin_or_synthetic_boundary",
+      "statement": "原版插件 recognize_media 可直接返回自定义 MediaInfo.seasons；缺集纯函数也接受外部给定编号列表。自然起点不为 1 与稀疏编号仅应作为插件输入或纯函数合成边界描述，不能由合成用例推断四个原生源的输出。"
+    },
+    {
+      "classification": "ordinary_tv_shape_minimum_change",
+      "statement": "本片保存 episodes=[] 整季哨兵的独立 shape 即可；不引入 TMDB 季详情编号 API，以免改变冻结 V2 普通识别链的 count 语义。"
+    }
+  ],
+  "determinism": {
+    "encoding": "UTF-8 without BOM",
+    "line_endings": "LF",
+    "serialization": "json.dumps(ensure_ascii=False, indent=2) + final LF",
+    "runtime_timestamp_included": false
+  }
+}

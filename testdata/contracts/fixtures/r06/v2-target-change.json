@@ -1,0 +1,1042 @@
+{
+  "schema_version": 1,
+  "source_version": "v2.15.6",
+  "source_commit": "458c08a137bedb4c2acebcfbbf7f6c23ef35bfbf",
+  "extraction": "dependency-free transcription of cited official V2 expressions",
+  "cases": [
+    {
+      "name": "create unknown",
+      "action": "create",
+      "snapshot": {
+        "season": 1,
+        "start_episode": 0,
+        "total_episode": 0,
+        "manual_total_episode": false,
+        "lack_episode": 0,
+        "note": [],
+        "best_version": false,
+        "best_version_full": false,
+        "current_priority": null,
+        "episode_priority": {}
+      },
+      "metadata_total": 0,
+      "expected": {
+        "snapshot": {
+          "season": 1,
+          "start_episode": 0,
+          "total_episode": 0,
+          "manual_total_episode": false,
+          "lack_episode": 0,
+          "note": [],
+          "best_version": false,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {}
+        },
+        "knowledge": "unknown",
+        "target_episodes": [],
+        "changed": false
+      }
+    },
+    {
+      "name": "create from metadata",
+      "action": "create",
+      "snapshot": {
+        "season": 1,
+        "start_episode": 0,
+        "total_episode": 0,
+        "manual_total_episode": false,
+        "lack_episode": 0,
+        "note": [],
+        "best_version": false,
+        "best_version_full": false,
+        "current_priority": null,
+        "episode_priority": {}
+      },
+      "metadata_total": 3,
+      "expected": {
+        "snapshot": {
+          "season": 1,
+          "start_episode": 0,
+          "total_episode": 3,
+          "manual_total_episode": false,
+          "lack_episode": 3,
+          "note": [],
+          "best_version": false,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {}
+        },
+        "knowledge": "known",
+        "target_episodes": [
+          {
+            "season": 1,
+            "episode": 1
+          },
+          {
+            "season": 1,
+            "episode": 2
+          },
+          {
+            "season": 1,
+            "episode": 3
+          }
+        ],
+        "changed": true
+      }
+    },
+    {
+      "name": "positive create stays automatic",
+      "action": "create",
+      "snapshot": {
+        "season": 1,
+        "start_episode": 0,
+        "total_episode": 2,
+        "manual_total_episode": false,
+        "lack_episode": 0,
+        "note": [],
+        "best_version": false,
+        "best_version_full": false,
+        "current_priority": null,
+        "episode_priority": {}
+      },
+      "metadata_total": 5,
+      "expected": {
+        "snapshot": {
+          "season": 1,
+          "start_episode": 0,
+          "total_episode": 2,
+          "manual_total_episode": false,
+          "lack_episode": 2,
+          "note": [],
+          "best_version": false,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {}
+        },
+        "knowledge": "known",
+        "target_episodes": [
+          {
+            "season": 1,
+            "episode": 1
+          },
+          {
+            "season": 1,
+            "episode": 2
+          }
+        ],
+        "changed": true
+      }
+    },
+    {
+      "name": "manual lock ignores expansion",
+      "action": "automatic",
+      "snapshot": {
+        "season": 1,
+        "start_episode": 0,
+        "total_episode": 3,
+        "manual_total_episode": true,
+        "lack_episode": 2,
+        "note": [],
+        "best_version": false,
+        "best_version_full": false,
+        "current_priority": null,
+        "episode_priority": {}
+      },
+      "metadata_total": 5,
+      "expected": {
+        "snapshot": {
+          "season": 1,
+          "start_episode": 0,
+          "total_episode": 3,
+          "manual_total_episode": true,
+          "lack_episode": 2,
+          "note": [],
+          "best_version": false,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {}
+        },
+        "knowledge": "known",
+        "target_episodes": [
+          {
+            "season": 1,
+            "episode": 1
+          },
+          {
+            "season": 1,
+            "episode": 2
+          },
+          {
+            "season": 1,
+            "episode": 3
+          }
+        ],
+        "changed": false
+      }
+    },
+    {
+      "name": "ordinary automatic expansion",
+      "action": "automatic",
+      "snapshot": {
+        "season": 1,
+        "start_episode": 0,
+        "total_episode": 3,
+        "manual_total_episode": false,
+        "lack_episode": 1,
+        "note": [
+          1,
+          2
+        ],
+        "best_version": false,
+        "best_version_full": false,
+        "current_priority": null,
+        "episode_priority": {}
+      },
+      "metadata_total": 5,
+      "expected": {
+        "snapshot": {
+          "season": 1,
+          "start_episode": 0,
+          "total_episode": 5,
+          "manual_total_episode": false,
+          "lack_episode": 3,
+          "note": [
+            1,
+            2
+          ],
+          "best_version": false,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {}
+        },
+        "knowledge": "known",
+        "target_episodes": [
+          {
+            "season": 1,
+            "episode": 1
+          },
+          {
+            "season": 1,
+            "episode": 2
+          },
+          {
+            "season": 1,
+            "episode": 3
+          },
+          {
+            "season": 1,
+            "episode": 4
+          },
+          {
+            "season": 1,
+            "episode": 5
+          }
+        ],
+        "changed": true
+      }
+    },
+    {
+      "name": "ordinary decrease uses untrusted candidate",
+      "action": "automatic",
+      "snapshot": {
+        "season": 1,
+        "start_episode": 0,
+        "total_episode": 8,
+        "manual_total_episode": false,
+        "lack_episode": 4,
+        "note": [],
+        "best_version": false,
+        "best_version_full": false,
+        "current_priority": null,
+        "episode_priority": {}
+      },
+      "metadata_total": 5,
+      "expected": {
+        "snapshot": {
+          "season": 1,
+          "start_episode": 0,
+          "total_episode": 5,
+          "manual_total_episode": false,
+          "lack_episode": 1,
+          "note": [],
+          "best_version": false,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {}
+        },
+        "knowledge": "known",
+        "target_episodes": [
+          {
+            "season": 1,
+            "episode": 1
+          },
+          {
+            "season": 1,
+            "episode": 2
+          },
+          {
+            "season": 1,
+            "episode": 3
+          },
+          {
+            "season": 1,
+            "episode": 4
+          },
+          {
+            "season": 1,
+            "episode": 5
+          }
+        ],
+        "changed": true
+      }
+    },
+    {
+      "name": "ordinary decrease clamps confirmed maximum",
+      "action": "automatic",
+      "snapshot": {
+        "season": 1,
+        "start_episode": 0,
+        "total_episode": 8,
+        "manual_total_episode": false,
+        "lack_episode": 4,
+        "note": [],
+        "best_version": false,
+        "best_version_full": false,
+        "current_priority": null,
+        "episode_priority": {}
+      },
+      "metadata_total": 4,
+      "shrink_evidence": {
+        "available": true,
+        "missing_episodes": [
+          6,
+          8
+        ]
+      },
+      "expected": {
+        "snapshot": {
+          "season": 1,
+          "start_episode": 0,
+          "total_episode": 7,
+          "manual_total_episode": false,
+          "lack_episode": 3,
+          "note": [],
+          "best_version": false,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {}
+        },
+        "knowledge": "known",
+        "target_episodes": [
+          {
+            "season": 1,
+            "episode": 1
+          },
+          {
+            "season": 1,
+            "episode": 2
+          },
+          {
+            "season": 1,
+            "episode": 3
+          },
+          {
+            "season": 1,
+            "episode": 4
+          },
+          {
+            "season": 1,
+            "episode": 5
+          },
+          {
+            "season": 1,
+            "episode": 6
+          },
+          {
+            "season": 1,
+            "episode": 7
+          }
+        ],
+        "changed": true
+      }
+    },
+    {
+      "name": "ordinary decrease keeps satisfied old target",
+      "action": "automatic",
+      "snapshot": {
+        "season": 1,
+        "start_episode": 0,
+        "total_episode": 8,
+        "manual_total_episode": false,
+        "lack_episode": 0,
+        "note": [],
+        "best_version": false,
+        "best_version_full": false,
+        "current_priority": null,
+        "episode_priority": {}
+      },
+      "metadata_total": 5,
+      "shrink_evidence": {
+        "available": true,
+        "satisfied": true
+      },
+      "expected": {
+        "snapshot": {
+          "season": 1,
+          "start_episode": 0,
+          "total_episode": 8,
+          "manual_total_episode": false,
+          "lack_episode": 0,
+          "note": [],
+          "best_version": false,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {}
+        },
+        "knowledge": "known",
+        "target_episodes": [
+          {
+            "season": 1,
+            "episode": 1
+          },
+          {
+            "season": 1,
+            "episode": 2
+          },
+          {
+            "season": 1,
+            "episode": 3
+          },
+          {
+            "season": 1,
+            "episode": 4
+          },
+          {
+            "season": 1,
+            "episode": 5
+          },
+          {
+            "season": 1,
+            "episode": 6
+          },
+          {
+            "season": 1,
+            "episode": 7
+          },
+          {
+            "season": 1,
+            "episode": 8
+          }
+        ],
+        "changed": false
+      }
+    },
+    {
+      "name": "public expansion locks total",
+      "action": "public_update",
+      "snapshot": {
+        "season": 1,
+        "start_episode": 0,
+        "total_episode": 3,
+        "manual_total_episode": false,
+        "lack_episode": 1,
+        "note": [],
+        "best_version": false,
+        "best_version_full": false,
+        "current_priority": null,
+        "episode_priority": {}
+      },
+      "update": {
+        "total_episode": 5
+      },
+      "expected": {
+        "snapshot": {
+          "season": 1,
+          "start_episode": 0,
+          "total_episode": 5,
+          "manual_total_episode": true,
+          "lack_episode": 3,
+          "note": [],
+          "best_version": false,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {}
+        },
+        "knowledge": "known",
+        "target_episodes": [
+          {
+            "season": 1,
+            "episode": 1
+          },
+          {
+            "season": 1,
+            "episode": 2
+          },
+          {
+            "season": 1,
+            "episode": 3
+          },
+          {
+            "season": 1,
+            "episode": 4
+          },
+          {
+            "season": 1,
+            "episode": 5
+          }
+        ],
+        "changed": true
+      }
+    },
+    {
+      "name": "public decrease keeps endpoint lack",
+      "action": "public_update",
+      "snapshot": {
+        "season": 1,
+        "start_episode": 0,
+        "total_episode": 5,
+        "manual_total_episode": false,
+        "lack_episode": 3,
+        "note": [],
+        "best_version": false,
+        "best_version_full": false,
+        "current_priority": null,
+        "episode_priority": {}
+      },
+      "update": {
+        "total_episode": 2
+      },
+      "expected": {
+        "snapshot": {
+          "season": 1,
+          "start_episode": 0,
+          "total_episode": 2,
+          "manual_total_episode": true,
+          "lack_episode": 3,
+          "note": [],
+          "best_version": false,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {}
+        },
+        "knowledge": "known",
+        "target_episodes": [
+          {
+            "season": 1,
+            "episode": 1
+          },
+          {
+            "season": 1,
+            "episode": 2
+          }
+        ],
+        "changed": true
+      }
+    },
+    {
+      "name": "same public total does not lock",
+      "action": "public_update",
+      "snapshot": {
+        "season": 1,
+        "start_episode": 0,
+        "total_episode": 5,
+        "manual_total_episode": false,
+        "lack_episode": 3,
+        "note": [],
+        "best_version": false,
+        "best_version_full": false,
+        "current_priority": null,
+        "episode_priority": {}
+      },
+      "update": {
+        "total_episode": 5
+      },
+      "expected": {
+        "snapshot": {
+          "season": 1,
+          "start_episode": 0,
+          "total_episode": 5,
+          "manual_total_episode": false,
+          "lack_episode": 3,
+          "note": [],
+          "best_version": false,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {}
+        },
+        "knowledge": "known",
+        "target_episodes": [
+          {
+            "season": 1,
+            "episode": 1
+          },
+          {
+            "season": 1,
+            "episode": 2
+          },
+          {
+            "season": 1,
+            "episode": 3
+          },
+          {
+            "season": 1,
+            "episode": 4
+          },
+          {
+            "season": 1,
+            "episode": 5
+          }
+        ],
+        "changed": false
+      }
+    },
+    {
+      "name": "season and start change only target view",
+      "action": "public_update",
+      "snapshot": {
+        "season": 1,
+        "start_episode": 0,
+        "total_episode": 5,
+        "manual_total_episode": false,
+        "lack_episode": 2,
+        "note": [
+          1,
+          3,
+          5
+        ],
+        "best_version": false,
+        "best_version_full": false,
+        "current_priority": null,
+        "episode_priority": {}
+      },
+      "update": {
+        "season": 2,
+        "start_episode": 3
+      },
+      "expected": {
+        "snapshot": {
+          "season": 2,
+          "start_episode": 3,
+          "total_episode": 5,
+          "manual_total_episode": false,
+          "lack_episode": 2,
+          "note": [
+            1,
+            3,
+            5
+          ],
+          "best_version": false,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {}
+        },
+        "knowledge": "known",
+        "target_episodes": [
+          {
+            "season": 2,
+            "episode": 3
+          },
+          {
+            "season": 2,
+            "episode": 4
+          },
+          {
+            "season": 2,
+            "episode": 5
+          }
+        ],
+        "changed": true
+      }
+    },
+    {
+      "name": "known empty range is not unknown",
+      "action": "describe",
+      "snapshot": {
+        "season": 1,
+        "start_episode": 3,
+        "total_episode": 2,
+        "manual_total_episode": false,
+        "lack_episode": 0,
+        "note": [],
+        "best_version": false,
+        "best_version_full": false,
+        "current_priority": null,
+        "episode_priority": {}
+      },
+      "expected": {
+        "snapshot": {
+          "season": 1,
+          "start_episode": 3,
+          "total_episode": 2,
+          "manual_total_episode": false,
+          "lack_episode": 0,
+          "note": [],
+          "best_version": false,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {}
+        },
+        "knowledge": "known",
+        "target_episodes": [],
+        "changed": false
+      }
+    },
+    {
+      "name": "episode best expansion filters and resets minimum",
+      "action": "automatic",
+      "snapshot": {
+        "season": 1,
+        "start_episode": 0,
+        "total_episode": 2,
+        "manual_total_episode": false,
+        "lack_episode": 0,
+        "note": [
+          1
+        ],
+        "best_version": true,
+        "best_version_full": false,
+        "current_priority": 60,
+        "episode_priority": {
+          "1": 80,
+          "2": 60
+        }
+      },
+      "metadata_total": 4,
+      "expected": {
+        "snapshot": {
+          "season": 1,
+          "start_episode": 0,
+          "total_episode": 4,
+          "manual_total_episode": false,
+          "lack_episode": 2,
+          "note": [
+            1
+          ],
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": 0,
+          "episode_priority": {
+            "1": 80,
+            "2": 60
+          }
+        },
+        "knowledge": "known",
+        "target_episodes": [
+          {
+            "season": 1,
+            "episode": 1
+          },
+          {
+            "season": 1,
+            "episode": 2
+          },
+          {
+            "season": 1,
+            "episode": 3
+          },
+          {
+            "season": 1,
+            "episode": 4
+          }
+        ],
+        "changed": true
+      }
+    },
+    {
+      "name": "episode best shrink filters priority and note",
+      "action": "automatic",
+      "snapshot": {
+        "season": 1,
+        "start_episode": 0,
+        "total_episode": 5,
+        "manual_total_episode": false,
+        "lack_episode": 1,
+        "note": [
+          1,
+          5
+        ],
+        "best_version": true,
+        "best_version_full": false,
+        "current_priority": 0,
+        "episode_priority": {
+          "1": 100,
+          "2": 80,
+          "4": 20,
+          "5": 10
+        }
+      },
+      "metadata_total": 3,
+      "expected": {
+        "snapshot": {
+          "season": 1,
+          "start_episode": 0,
+          "total_episode": 3,
+          "manual_total_episode": false,
+          "lack_episode": 1,
+          "note": [
+            1,
+            5
+          ],
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": 0,
+          "episode_priority": {
+            "1": 100,
+            "2": 80
+          }
+        },
+        "knowledge": "known",
+        "target_episodes": [
+          {
+            "season": 1,
+            "episode": 1
+          },
+          {
+            "season": 1,
+            "episode": 2
+          },
+          {
+            "season": 1,
+            "episode": 3
+          }
+        ],
+        "changed": true
+      }
+    },
+    {
+      "name": "full best expansion resets current priority",
+      "action": "automatic",
+      "snapshot": {
+        "season": 1,
+        "start_episode": 0,
+        "total_episode": 2,
+        "manual_total_episode": false,
+        "lack_episode": 0,
+        "note": [],
+        "best_version": true,
+        "best_version_full": true,
+        "current_priority": 90,
+        "episode_priority": {
+          "1": 90,
+          "2": 90
+        }
+      },
+      "metadata_total": 4,
+      "expected": {
+        "snapshot": {
+          "season": 1,
+          "start_episode": 0,
+          "total_episode": 4,
+          "manual_total_episode": false,
+          "lack_episode": 2,
+          "note": [],
+          "best_version": true,
+          "best_version_full": true,
+          "current_priority": 0,
+          "episode_priority": {
+            "1": 90,
+            "2": 90
+          }
+        },
+        "knowledge": "known",
+        "target_episodes": [
+          {
+            "season": 1,
+            "episode": 1
+          },
+          {
+            "season": 1,
+            "episode": 2
+          },
+          {
+            "season": 1,
+            "episode": 3
+          },
+          {
+            "season": 1,
+            "episode": 4
+          }
+        ],
+        "changed": true
+      }
+    },
+    {
+      "name": "full best shrink preserves current priority",
+      "action": "automatic",
+      "snapshot": {
+        "season": 1,
+        "start_episode": 0,
+        "total_episode": 4,
+        "manual_total_episode": false,
+        "lack_episode": 1,
+        "note": [],
+        "best_version": true,
+        "best_version_full": true,
+        "current_priority": 90,
+        "episode_priority": {
+          "1": 90,
+          "2": 90,
+          "4": 30
+        }
+      },
+      "metadata_total": 2,
+      "expected": {
+        "snapshot": {
+          "season": 1,
+          "start_episode": 0,
+          "total_episode": 2,
+          "manual_total_episode": false,
+          "lack_episode": 0,
+          "note": [],
+          "best_version": true,
+          "best_version_full": true,
+          "current_priority": 90,
+          "episode_priority": {
+            "1": 90,
+            "2": 90
+          }
+        },
+        "knowledge": "known",
+        "target_episodes": [
+          {
+            "season": 1,
+            "episode": 1
+          },
+          {
+            "season": 1,
+            "episode": 2
+          }
+        ],
+        "changed": true
+      }
+    },
+    {
+      "name": "ordinary mode residual full flag still clamps satisfied old target",
+      "action": "automatic",
+      "snapshot": {
+        "season": 1,
+        "start_episode": 0,
+        "total_episode": 8,
+        "manual_total_episode": false,
+        "lack_episode": 0,
+        "note": [],
+        "best_version": false,
+        "best_version_full": true,
+        "current_priority": null,
+        "episode_priority": {}
+      },
+      "metadata_total": 5,
+      "shrink_evidence": {
+        "available": true,
+        "satisfied": true
+      },
+      "expected": {
+        "snapshot": {
+          "season": 1,
+          "start_episode": 0,
+          "total_episode": 8,
+          "manual_total_episode": false,
+          "lack_episode": 0,
+          "note": [],
+          "best_version": false,
+          "best_version_full": true,
+          "current_priority": null,
+          "episode_priority": {}
+        },
+        "knowledge": "known",
+        "target_episodes": [
+          {
+            "season": 1,
+            "episode": 1
+          },
+          {
+            "season": 1,
+            "episode": 2
+          },
+          {
+            "season": 1,
+            "episode": 3
+          },
+          {
+            "season": 1,
+            "episode": 4
+          },
+          {
+            "season": 1,
+            "episode": 5
+          },
+          {
+            "season": 1,
+            "episode": 6
+          },
+          {
+            "season": 1,
+            "episode": 7
+          },
+          {
+            "season": 1,
+            "episode": 8
+          }
+        ],
+        "changed": false
+      }
+    },
+    {
+      "name": "reset unlocks and clears progress",
+      "action": "reset",
+      "snapshot": {
+        "season": 1,
+        "start_episode": 0,
+        "total_episode": 4,
+        "manual_total_episode": true,
+        "lack_episode": 1,
+        "note": [
+          1,
+          2
+        ],
+        "best_version": true,
+        "best_version_full": false,
+        "current_priority": 60,
+        "episode_priority": {
+          "1": 100,
+          "2": 60
+        }
+      },
+      "expected": {
+        "snapshot": {
+          "season": 1,
+          "start_episode": 0,
+          "total_episode": 4,
+          "manual_total_episode": false,
+          "lack_episode": 4,
+          "note": [],
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {}
+        },
+        "knowledge": "known",
+        "target_episodes": [
+          {
+            "season": 1,
+            "episode": 1
+          },
+          {
+            "season": 1,
+            "episode": 2
+          },
+          {
+            "season": 1,
+            "episode": 3
+          },
+          {
+            "season": 1,
+            "episode": 4
+          }
+        ],
+        "changed": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,222 @@
+[
+  {
+    "name": "movie_full",
+    "app_domain": "https://mp.example.com",
+    "snapshots": [
+      {
+        "batch_id": "22222222-2222-4222-8222-222222222222",
+        "intent_id": "11111111-1111-4111-8111-111111111111",
+        "group_key": "",
+        "version": 1,
+        "legacy": false,
+        "username": "alice",
+        "need_notify": true,
+        "manual": false,
+        "background": false,
+        "media": {
+          "source": "themoviedb",
+          "media_id": "438631",
+          "title_year": "沙丘 (2021)",
+          "type": "电影",
+          "category": "科幻",
+          "vote_average": 8.0,
+          "poster_url": "https://image.example/original/poster.jpg",
+          "backdrop_url": "https://image.example/original/backdrop-original.jpg"
+        },
+        "files": [
+          {"ordinal": 0, "role": "media", "size_bytes": 10737418240, "season": 0, "episodes": [], "resource_term": "2160p WEB-DL H265"}
+        ]
+      }
+    ],
+    "expected": [
+      {
+        "title": "沙丘 (2021) 已入库",
+        "text": "评分：8.0，类型：电影，类别：科幻，质量：2160p WEB-DL H265，共1个文件，大小：10.0G",
+        "image": "https://image.example/w500/backdrop-w500.jpg",
+        "link": "https://mp.example.com/#/history",
+        "username": "alice",
+        "context": {"title_year": "沙丘 (2021)", "season_episode": "", "vote_average": "8.0", "type": "电影", "category": "科幻", "resource_term": "2160p WEB-DL H265", "file_count": 1, "total_size": "10.0G", "err_msg": "", "username": "alice"}
+      }
+    ]
+  },
+  {
+    "name": "tv_gapped",
+    "app_domain": "mp.example.com/app",
+    "snapshots": [
+      {
+        "batch_id": "33333333-3333-4333-8333-333333333333",
+        "intent_id": "12111111-1111-4111-8111-111111111111",
+        "group_key": "",
+        "version": 1,
+        "legacy": false,
+        "username": "bob",
+        "need_notify": true,
+        "manual": false,
+        "background": false,
+        "media": {"source": "themoviedb", "media_id": "100", "title_year": "示例剧 (2026)", "type": "电视剧", "category": "欧美", "vote_average": 8.6, "poster_url": "", "backdrop_url": "https://image.example/original/tv.jpg"},
+        "files": [
+          {"ordinal": 1, "role": "media", "size_bytes": 1, "season": 1, "episodes": [5], "resource_term": "1080p WEB-DL"},
+          {"ordinal": 0, "role": "media", "size_bytes": 1048575, "season": 1, "episodes": [3, 1, 2], "resource_term": "1080p WEB-DL"}
+        ]
+      }
+    ],
+    "expected": [
+      {
+        "title": "示例剧 (2026) S01 E01-E03、E05 已入库",
+        "text": "评分：8.6，类型：电视剧，类别：欧美，质量：1080p WEB-DL，共2个文件，大小：1.0M",
+        "image": "https://image.example/w500/tv.jpg",
+        "link": "http://mp.example.com/app/#/history",
+        "username": "bob",
+        "context": {"title_year": "示例剧 (2026)", "season_episode": "S01 E01-E03、E05", "vote_average": "8.6", "type": "电视剧", "category": "欧美", "resource_term": "1080p WEB-DL", "file_count": 2, "total_size": "1.0M", "err_msg": "", "username": "bob"}
+      }
+    ]
+  },
+  {
+    "name": "optional_empty",
+    "app_domain": "",
+    "snapshots": [
+      {
+        "batch_id": "44444444-4444-4444-8444-444444444444",
+        "intent_id": "13111111-1111-4111-8111-111111111111",
+        "group_key": "",
+        "version": 1,
+        "legacy": false,
+        "username": "",
+        "need_notify": true,
+        "manual": false,
+        "background": false,
+        "media": {"source": "", "media_id": "", "title_year": "无可选字段 (2020)", "type": "电影", "category": "", "vote_average": 0, "poster_url": "https://image.example/original/fallback.jpg", "backdrop_url": ""},
+        "files": [
+          {"ordinal": 0, "role": "media", "size_bytes": 1, "season": 0, "episodes": [], "resource_term": ""},
+          {"ordinal": 1, "role": "media", "size_bytes": 1023, "season": 0, "episodes": [], "resource_term": ""}
+        ]
+      }
+    ],
+    "expected": [
+      {
+        "title": "无可选字段 (2020) 已入库",
+        "text": "类型：电影，共2个文件，大小：1.0K",
+        "image": "https://image.example/w500/fallback.jpg",
+        "link": null,
+        "username": "",
+        "context": {"title_year": "无可选字段 (2020)", "season_episode": "", "vote_average": "", "type": "电影", "category": "", "resource_term": "", "file_count": 2, "total_size": "1.0K", "err_msg": "", "username": ""}
+      }
+    ]
+  },
+  {
+    "name": "new_input_fields_empty",
+    "app_domain": "",
+    "snapshots": [
+      {
+        "batch_id": "55555555-5555-4555-8555-555555555555",
+        "intent_id": "14111111-1111-4111-8111-111111111111",
+        "group_key": "",
+        "version": 1,
+        "legacy": false,
+        "username": "",
+        "need_notify": true,
+        "manual": false,
+        "background": false,
+        "media": {"source": "", "media_id": "", "title_year": "", "type": "", "category": "", "vote_average": 0, "poster_url": "", "backdrop_url": ""},
+        "files": [
+          {"ordinal": 0, "role": "media", "size_bytes": 0, "season": 0, "episodes": [], "resource_term": ""}
+        ]
+      }
+    ],
+    "expected": [
+      {
+        "title": " 已入库",
+        "text": "类型：，共1个文件，大小：0.0B",
+        "image": "",
+        "link": null,
+        "username": "",
+        "context": {"title_year": "", "season_episode": "", "vote_average": "", "type": "", "category": "", "resource_term": "", "file_count": 1, "total_size": "0.0B", "err_msg": "", "username": ""}
+      }
+    ]
+  },
+  {
+    "name": "tv_season_only",
+    "app_domain": "https://mp.example.com/",
+    "snapshots": [
+      {
+        "batch_id": "66666666-6666-4666-8666-666666666666",
+        "intent_id": "15111111-1111-4111-8111-111111111111",
+        "group_key": "",
+        "version": 1,
+        "legacy": false,
+        "username": "carol",
+        "need_notify": true,
+        "manual": true,
+        "background": true,
+        "media": {"source": "douban", "media_id": "1", "title_year": "无集数剧 (2025)", "type": "电视剧", "category": "", "vote_average": 0, "poster_url": "", "backdrop_url": ""},
+        "files": [
+          {"ordinal": 0, "role": "media", "size_bytes": 1024, "season": 2, "episodes": [], "resource_term": "WEB-DL"}
+        ]
+      }
+    ],
+    "expected": [
+      {
+        "title": "无集数剧 (2025) S02 已入库",
+        "text": "类型：电视剧，质量：WEB-DL，共1个文件，大小：1.0K",
+        "image": "",
+        "link": "https://mp.example.com/#/history",
+        "username": "carol",
+        "context": {"title_year": "无集数剧 (2025)", "season_episode": "S02", "vote_average": "", "type": "电视剧", "category": "", "resource_term": "WEB-DL", "file_count": 1, "total_size": "1.0K", "err_msg": "", "username": "carol"}
+      }
+    ]
+  },
+  {
+    "name": "cross_season",
+    "app_domain": "https://mp.example.com/moviepilot",
+    "snapshots": [
+      {
+        "batch_id": "77777777-7777-4777-8777-777777777777",
+        "intent_id": "16111111-1111-4111-8111-111111111111",
+        "group_key": "",
+        "version": 1,
+        "legacy": false,
+        "username": "dave",
+        "need_notify": true,
+        "manual": false,
+        "background": false,
+        "media": {"source": "themoviedb", "media_id": "200", "title_year": "跨季剧 (2024)", "type": "电视剧", "category": "国产", "vote_average": 0, "poster_url": "https://image.example/original/cross.jpg", "backdrop_url": ""},
+        "files": [
+          {"ordinal": 0, "role": "media", "size_bytes": 1024, "season": 1, "episodes": [1], "resource_term": "1080p"}
+        ]
+      },
+      {
+        "batch_id": "77777777-7777-4777-8777-777777777777",
+        "intent_id": "16111111-1111-4111-8111-111111111111",
+        "group_key": "",
+        "version": 1,
+        "legacy": false,
+        "username": "dave",
+        "need_notify": true,
+        "manual": false,
+        "background": false,
+        "media": {"source": "themoviedb", "media_id": "200", "title_year": "跨季剧 (2024)", "type": "电视剧", "category": "国产", "vote_average": 0, "poster_url": "https://image.example/original/cross.jpg", "backdrop_url": ""},
+        "files": [
+          {"ordinal": 1, "role": "media", "size_bytes": 1048576, "season": 2, "episodes": [3, 2], "resource_term": "1080p"}
+        ]
+      }
+    ],
+    "expected": [
+      {
+        "title": "跨季剧 (2024) S01 E01 已入库",
+        "text": "类型：电视剧，类别：国产，质量：1080p，共1个文件，大小：1.0K",
+        "image": "https://image.example/w500/cross.jpg",
+        "link": "https://mp.example.com/moviepilot/#/history",
+        "username": "dave",
+        "context": {"title_year": "跨季剧 (2024)", "season_episode": "S01 E01", "vote_average": "", "type": "电视剧", "category": "国产", "resource_term": "1080p", "file_count": 1, "total_size": "1.0K", "err_msg": "", "username": "dave"}
+      },
+      {
+        "title": "跨季剧 (2024) S02 E02-E03 已入库",
+        "text": "类型：电视剧，类别：国产，质量：1080p，共1个文件，大小：1.0M",
+        "image": "https://image.example/w500/cross.jpg",
+        "link": "https://mp.example.com/moviepilot/#/history",
+        "username": "dave",
+        "context": {"title_year": "跨季剧 (2024)", "season_episode": "S02 E02-E03", "vote_average": "", "type": "电视剧", "category": "国产", "resource_term": "1080p", "file_count": 1, "total_size": "1.0M", "err_msg": "", "username": "dave"}
+      }
+    ]
+  }
+]

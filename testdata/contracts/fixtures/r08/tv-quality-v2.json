@@ -1,0 +1,5045 @@
+{
+  "schema_version": 1,
+  "source": {
+    "path": "baselines\\2026-09-13\\official-v2\\app\\chain\\subscribe.py",
+    "sha256": "acb32d818b2cb8bf8dec3062e1b9155595b2045b8de08aa7db3005f6d48b0f95",
+    "methods": {
+      "__normalize_episode_priority": [
+        143,
+        158
+      ],
+      "__get_episode_priority": [
+        161,
+        181
+      ],
+      "__get_best_version_target_episodes": [
+        191,
+        203
+      ],
+      "__get_downloaded_best_version_episodes": [
+        206,
+        240
+      ],
+      "__get_pending_best_version_episodes_with_priority": [
+        243,
+        260
+      ],
+      "compute_lack_episode": [
+        271,
+        330
+      ],
+      "get_best_version_current_priority": [
+        333,
+        357
+      ],
+      "__prepare_best_version_total_change_fields": [
+        402,
+        441
+      ],
+      "__is_best_version_complete": [
+        470,
+        486
+      ],
+      "is_best_version_complete": [
+        489,
+        493
+      ],
+      "__get_best_version_interested_episodes": [
+        550,
+        588
+      ],
+      "__prepare_best_version_tv_candidate": [
+        591,
+        616
+      ],
+      "__is_full_best_version_enabled": [
+        619,
+        627
+      ],
+      "__is_full_season_resource": [
+        630,
+        648
+      ],
+      "__is_full_season_best_version_resource": [
+        651,
+        658
+      ],
+      "__should_prefer_full_pack_for_episode_best_version": [
+        661,
+        690
+      ],
+      "__build_full_pack_first_no_exists": [
+        693,
+        722
+      ],
+      "__download_best_version_with_full_pack_first": [
+        724,
+        788
+      ],
+      "__prepare_subscribe_progress_fields": [
+        2514,
+        2535
+      ],
+      "__record_subscribe_download_facts": [
+        2710,
+        2810
+      ],
+      "__finish_subscribe_pending_guard": [
+        2817,
+        2818
+      ]
+    }
+  },
+  "admission": [
+    {
+      "name": "同质量逐集拒绝",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {
+            "1": 90
+          },
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "candidate_priority": 90,
+        "selected_episodes": [
+          1
+        ],
+        "meta_episodes": [
+          1
+        ]
+      },
+      "expected": {
+        "allowed": false,
+        "interested_episodes": [],
+        "allowed_episodes": null,
+        "prefer_full_pack": false
+      }
+    },
+    {
+      "name": "低质量逐集拒绝",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {
+            "1": 90
+          },
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "candidate_priority": 80,
+        "selected_episodes": [
+          1
+        ],
+        "meta_episodes": [
+          1
+        ]
+      },
+      "expected": {
+        "allowed": false,
+        "interested_episodes": [],
+        "allowed_episodes": null,
+        "prefer_full_pack": false
+      }
+    },
+    {
+      "name": "仅提升实际选中目标集",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {
+            "1": 100,
+            "2": 80,
+            "3": 90
+          },
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "candidate_priority": 90,
+        "selected_episodes": [
+          1,
+          2
+        ],
+        "meta_episodes": [
+          1,
+          2,
+          3
+        ]
+      },
+      "expected": {
+        "allowed": true,
+        "interested_episodes": [
+          2
+        ],
+        "allowed_episodes": [
+          2
+        ],
+        "prefer_full_pack": false
+      }
+    },
+    {
+      "name": "缺少事实的负质量仍有逐集兴趣",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "candidate_priority": -1,
+        "selected_episodes": [
+          1
+        ],
+        "meta_episodes": [
+          1
+        ]
+      },
+      "expected": {
+        "allowed": true,
+        "interested_episodes": [
+          1
+        ],
+        "allowed_episodes": [
+          1
+        ],
+        "prefer_full_pack": false
+      }
+    },
+    {
+      "name": "整体旧字段回填逐集拒绝同级",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": 90,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "candidate_priority": 90,
+        "selected_episodes": [
+          1
+        ],
+        "meta_episodes": [
+          1
+        ]
+      },
+      "expected": {
+        "allowed": false,
+        "interested_episodes": [],
+        "allowed_episodes": null,
+        "prefer_full_pack": false
+      }
+    },
+    {
+      "name": "整体旧字段回填逐集允许升级",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": 90,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "candidate_priority": 100,
+        "selected_episodes": [
+          1,
+          2,
+          3
+        ],
+        "meta_episodes": []
+      },
+      "expected": {
+        "allowed": true,
+        "interested_episodes": [
+          1,
+          2,
+          3
+        ],
+        "allowed_episodes": [
+          1,
+          2,
+          3
+        ],
+        "prefer_full_pack": true
+      }
+    },
+    {
+      "name": "空选集忽略元数据并查询全部目标",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {
+            "1": 100,
+            "2": 80,
+            "3": 100
+          },
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "candidate_priority": 90,
+        "selected_episodes": [],
+        "meta_episodes": [
+          1
+        ]
+      },
+      "expected": {
+        "allowed": true,
+        "interested_episodes": [
+          2
+        ],
+        "allowed_episodes": [
+          2
+        ],
+        "prefer_full_pack": false
+      }
+    },
+    {
+      "name": "选集为None回退元数据",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {
+            "1": 100,
+            "2": 80
+          },
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "candidate_priority": 90,
+        "selected_episodes": null,
+        "meta_episodes": [
+          1
+        ]
+      },
+      "expected": {
+        "allowed": false,
+        "interested_episodes": [],
+        "allowed_episodes": null,
+        "prefer_full_pack": false
+      }
+    },
+    {
+      "name": "无集号按目标查询兴趣",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {
+            "1": 100
+          },
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "candidate_priority": 90,
+        "selected_episodes": null,
+        "meta_episodes": []
+      },
+      "expected": {
+        "allowed": true,
+        "interested_episodes": [
+          2,
+          3
+        ],
+        "allowed_episodes": [
+          2,
+          3
+        ],
+        "prefer_full_pack": false
+      }
+    },
+    {
+      "name": "越界及非法集号忽略且去重",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 2,
+          "total_episode": 4,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "candidate_priority": 90,
+        "selected_episodes": [
+          1,
+          "2",
+          2,
+          "bad",
+          4,
+          5
+        ],
+        "meta_episodes": []
+      },
+      "expected": {
+        "allowed": true,
+        "interested_episodes": [
+          2,
+          4
+        ],
+        "allowed_episodes": [
+          2,
+          4
+        ],
+        "prefer_full_pack": true
+      }
+    },
+    {
+      "name": "空目标不准入",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 4,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "candidate_priority": 100,
+        "selected_episodes": null,
+        "meta_episodes": []
+      },
+      "expected": {
+        "allowed": false,
+        "interested_episodes": [],
+        "allowed_episodes": null,
+        "prefer_full_pack": false
+      }
+    },
+    {
+      "name": "全集同级拒绝",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": true,
+          "current_priority": 90,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "candidate_priority": 90,
+        "selected_episodes": null,
+        "meta_episodes": []
+      },
+      "expected": {
+        "allowed": false,
+        "interested_episodes": [
+          1,
+          2,
+          3
+        ],
+        "allowed_episodes": null,
+        "prefer_full_pack": false
+      }
+    },
+    {
+      "name": "全集低级拒绝",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": true,
+          "current_priority": 90,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "candidate_priority": 80,
+        "selected_episodes": [
+          1,
+          2,
+          3
+        ],
+        "meta_episodes": []
+      },
+      "expected": {
+        "allowed": false,
+        "interested_episodes": [
+          1,
+          2,
+          3
+        ],
+        "allowed_episodes": null,
+        "prefer_full_pack": false
+      }
+    },
+    {
+      "name": "全集高级准入",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": true,
+          "current_priority": 90,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "candidate_priority": 100,
+        "selected_episodes": [
+          1
+        ],
+        "meta_episodes": []
+      },
+      "expected": {
+        "allowed": true,
+        "interested_episodes": [
+          1
+        ],
+        "allowed_episodes": null,
+        "prefer_full_pack": false
+      }
+    },
+    {
+      "name": "全集未知基线拒绝零",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": true,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "candidate_priority": 0,
+        "selected_episodes": null,
+        "meta_episodes": []
+      },
+      "expected": {
+        "allowed": false,
+        "interested_episodes": [
+          1,
+          2,
+          3
+        ],
+        "allowed_episodes": null,
+        "prefer_full_pack": false
+      }
+    },
+    {
+      "name": "全集数字字符串按int比较",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": true,
+          "current_priority": 90,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "candidate_priority": "100",
+        "selected_episodes": null,
+        "meta_episodes": []
+      },
+      "expected": {
+        "allowed": true,
+        "interested_episodes": null,
+        "allowed_episodes": null,
+        "prefer_full_pack": false
+      }
+    },
+    {
+      "name": "全集非法数字拒绝",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": true,
+          "current_priority": 90,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "candidate_priority": "bad",
+        "selected_episodes": null,
+        "meta_episodes": []
+      },
+      "expected": {
+        "allowed": false,
+        "interested_episodes": null,
+        "allowed_episodes": null,
+        "prefer_full_pack": false
+      }
+    },
+    {
+      "name": "整包必须高于所有目标集",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {
+            "1": 100,
+            "2": 80,
+            "3": 90
+          },
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "candidate_priority": 100,
+        "selected_episodes": null,
+        "meta_episodes": []
+      },
+      "expected": {
+        "allowed": true,
+        "interested_episodes": [
+          2,
+          3
+        ],
+        "allowed_episodes": [
+          2,
+          3
+        ],
+        "prefer_full_pack": false
+      }
+    },
+    {
+      "name": "整包全目标严格升级",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {
+            "1": 90,
+            "2": 80,
+            "3": 90
+          },
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "candidate_priority": 100,
+        "selected_episodes": null,
+        "meta_episodes": []
+      },
+      "expected": {
+        "allowed": true,
+        "interested_episodes": [
+          1,
+          2,
+          3
+        ],
+        "allowed_episodes": [
+          1,
+          2,
+          3
+        ],
+        "prefer_full_pack": true
+      }
+    },
+    {
+      "name": "缺值整包门槛默认零",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "candidate_priority": 0,
+        "selected_episodes": null,
+        "meta_episodes": []
+      },
+      "expected": {
+        "allowed": true,
+        "interested_episodes": [
+          1,
+          2,
+          3
+        ],
+        "allowed_episodes": [
+          1,
+          2,
+          3
+        ],
+        "prefer_full_pack": false
+      }
+    }
+  ],
+  "facts": [
+    {
+      "name": "低质量覆盖记note但未洗版完成",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": 90,
+            "selected_episodes": [
+              1
+            ],
+            "meta_episodes": [],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [
+            1
+          ],
+          "episode_priority": {
+            "1": 90
+          },
+          "current_priority": null,
+          "lack_episode": 3,
+          "complete": false,
+          "covered_episodes": [
+            1
+          ],
+          "fields": [
+            "note",
+            "episode_priority",
+            "last_update"
+          ],
+          "updated": true
+        },
+        "progress": {
+          "note": [
+            1
+          ],
+          "episode_priority": {
+            "1": 90
+          },
+          "current_priority": 0,
+          "lack_episode": 2,
+          "complete": false,
+          "fields": [
+            "lack_episode",
+            "current_priority"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    },
+    {
+      "name": "选中集优先于元数据全集",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": 90,
+            "selected_episodes": [
+              2
+            ],
+            "meta_episodes": [
+              1,
+              2,
+              3
+            ],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [
+            2
+          ],
+          "episode_priority": {
+            "2": 90
+          },
+          "current_priority": null,
+          "lack_episode": 3,
+          "complete": false,
+          "covered_episodes": [
+            2
+          ],
+          "fields": [
+            "note",
+            "episode_priority",
+            "last_update"
+          ],
+          "updated": true
+        },
+        "progress": {
+          "note": [
+            2
+          ],
+          "episode_priority": {
+            "2": 90
+          },
+          "current_priority": 0,
+          "lack_episode": 2,
+          "complete": false,
+          "fields": [
+            "lack_episode",
+            "current_priority"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    },
+    {
+      "name": "空选集回退元数据",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": 90,
+            "selected_episodes": [],
+            "meta_episodes": [
+              2
+            ],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [
+            2
+          ],
+          "episode_priority": {
+            "2": 90
+          },
+          "current_priority": null,
+          "lack_episode": 3,
+          "complete": false,
+          "covered_episodes": [
+            2
+          ],
+          "fields": [
+            "note",
+            "episode_priority",
+            "last_update"
+          ],
+          "updated": true
+        },
+        "progress": {
+          "note": [
+            2
+          ],
+          "episode_priority": {
+            "2": 90
+          },
+          "current_priority": 0,
+          "lack_episode": 2,
+          "complete": false,
+          "fields": [
+            "lack_episode",
+            "current_priority"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    },
+    {
+      "name": "缺少选集属性回退元数据",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": 90,
+            "selected_episodes": null,
+            "meta_episodes": [
+              2
+            ],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ],
+            "selected_attribute_present": false
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [
+            2
+          ],
+          "episode_priority": {
+            "2": 90
+          },
+          "current_priority": null,
+          "lack_episode": 3,
+          "complete": false,
+          "covered_episodes": [
+            2
+          ],
+          "fields": [
+            "note",
+            "episode_priority",
+            "last_update"
+          ],
+          "updated": true
+        },
+        "progress": {
+          "note": [
+            2
+          ],
+          "episode_priority": {
+            "2": 90
+          },
+          "current_priority": 0,
+          "lack_episode": 2,
+          "complete": false,
+          "fields": [
+            "lack_episode",
+            "current_priority"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    },
+    {
+      "name": "确认覆盖且无集号回填全部目标",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": 90,
+            "selected_episodes": null,
+            "meta_episodes": [],
+            "confirmed_full_coverage": true,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [
+            1,
+            2,
+            3
+          ],
+          "episode_priority": {
+            "1": 90,
+            "2": 90,
+            "3": 90
+          },
+          "current_priority": null,
+          "lack_episode": 3,
+          "complete": false,
+          "covered_episodes": [
+            1,
+            2,
+            3
+          ],
+          "fields": [
+            "note",
+            "episode_priority",
+            "last_update"
+          ],
+          "updated": true
+        },
+        "progress": {
+          "note": [
+            1,
+            2,
+            3
+          ],
+          "episode_priority": {
+            "1": 90,
+            "2": 90,
+            "3": 90
+          },
+          "current_priority": 90,
+          "lack_episode": 0,
+          "complete": false,
+          "fields": [
+            "lack_episode",
+            "current_priority"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    },
+    {
+      "name": "没有集号且未确认不写事实",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": 100,
+            "selected_episodes": null,
+            "meta_episodes": [],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [],
+          "episode_priority": {},
+          "current_priority": null,
+          "lack_episode": 3,
+          "complete": false,
+          "covered_episodes": [],
+          "fields": [],
+          "updated": false
+        },
+        "progress": {
+          "note": [],
+          "episode_priority": {},
+          "current_priority": 0,
+          "lack_episode": 3,
+          "complete": false,
+          "fields": [
+            "lack_episode",
+            "current_priority"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    },
+    {
+      "name": "全集元数据未确认只写按集事实",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": true,
+          "current_priority": 80,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": 100,
+            "selected_episodes": null,
+            "meta_episodes": [
+              1,
+              2,
+              3
+            ],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [
+            1,
+            2,
+            3
+          ],
+          "episode_priority": {
+            "1": 100,
+            "2": 100,
+            "3": 100
+          },
+          "current_priority": 80,
+          "lack_episode": 3,
+          "complete": false,
+          "covered_episodes": [
+            1,
+            2,
+            3
+          ],
+          "fields": [
+            "note",
+            "episode_priority",
+            "last_update"
+          ],
+          "updated": true
+        },
+        "progress": {
+          "note": [
+            1,
+            2,
+            3
+          ],
+          "episode_priority": {
+            "1": 100,
+            "2": 100,
+            "3": 100
+          },
+          "current_priority": 80,
+          "lack_episode": 0,
+          "complete": false,
+          "fields": [
+            "lack_episode"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    },
+    {
+      "name": "全集确认全实际覆盖升级",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": true,
+          "current_priority": 80,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": 90,
+            "selected_episodes": [
+              1,
+              2,
+              3
+            ],
+            "meta_episodes": [],
+            "confirmed_full_coverage": true,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [
+            1,
+            2,
+            3
+          ],
+          "episode_priority": {
+            "1": 90,
+            "2": 90,
+            "3": 90
+          },
+          "current_priority": 90,
+          "lack_episode": 3,
+          "complete": false,
+          "covered_episodes": [
+            1,
+            2,
+            3
+          ],
+          "fields": [
+            "current_priority",
+            "note",
+            "episode_priority",
+            "last_update"
+          ],
+          "updated": true
+        },
+        "progress": {
+          "note": [
+            1,
+            2,
+            3
+          ],
+          "episode_priority": {
+            "1": 90,
+            "2": 90,
+            "3": 90
+          },
+          "current_priority": 90,
+          "lack_episode": 0,
+          "complete": false,
+          "fields": [
+            "lack_episode"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    },
+    {
+      "name": "V2信任确认标记即使实际覆盖部分",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": true,
+          "current_priority": 80,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": 100,
+            "selected_episodes": [
+              1
+            ],
+            "meta_episodes": [],
+            "confirmed_full_coverage": true,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [
+            1
+          ],
+          "episode_priority": {
+            "1": 100
+          },
+          "current_priority": 100,
+          "lack_episode": 3,
+          "complete": true,
+          "covered_episodes": [
+            1
+          ],
+          "fields": [
+            "current_priority",
+            "note",
+            "episode_priority",
+            "last_update"
+          ],
+          "updated": true
+        },
+        "progress": {
+          "note": [
+            1
+          ],
+          "episode_priority": {
+            "1": 100
+          },
+          "current_priority": 100,
+          "lack_episode": 2,
+          "complete": true,
+          "fields": [
+            "lack_episode"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    },
+    {
+      "name": "全集同级不改整体质量但记录覆盖",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": true,
+          "current_priority": 90,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": 90,
+            "selected_episodes": [
+              1,
+              2,
+              3
+            ],
+            "meta_episodes": [],
+            "confirmed_full_coverage": true,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [
+            1,
+            2,
+            3
+          ],
+          "episode_priority": {
+            "1": 90,
+            "2": 90,
+            "3": 90
+          },
+          "current_priority": 90,
+          "lack_episode": 3,
+          "complete": false,
+          "covered_episodes": [
+            1,
+            2,
+            3
+          ],
+          "fields": [
+            "note",
+            "episode_priority",
+            "last_update"
+          ],
+          "updated": true
+        },
+        "progress": {
+          "note": [
+            1,
+            2,
+            3
+          ],
+          "episode_priority": {
+            "1": 90,
+            "2": 90,
+            "3": 90
+          },
+          "current_priority": 90,
+          "lack_episode": 0,
+          "complete": false,
+          "fields": [
+            "lack_episode"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    },
+    {
+      "name": "全集低级不改整体质量",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": true,
+          "current_priority": 90,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": 80,
+            "selected_episodes": [
+              1,
+              2,
+              3
+            ],
+            "meta_episodes": [],
+            "confirmed_full_coverage": true,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [
+            1,
+            2,
+            3
+          ],
+          "episode_priority": {
+            "1": 80,
+            "2": 80,
+            "3": 80
+          },
+          "current_priority": 90,
+          "lack_episode": 3,
+          "complete": false,
+          "covered_episodes": [
+            1,
+            2,
+            3
+          ],
+          "fields": [
+            "note",
+            "episode_priority",
+            "last_update"
+          ],
+          "updated": true
+        },
+        "progress": {
+          "note": [
+            1,
+            2,
+            3
+          ],
+          "episode_priority": {
+            "1": 80,
+            "2": 80,
+            "3": 80
+          },
+          "current_priority": 90,
+          "lack_episode": 0,
+          "complete": false,
+          "fields": [
+            "lack_episode"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    },
+    {
+      "name": "全集恰好100完成",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": true,
+          "current_priority": 90,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": 100,
+            "selected_episodes": [
+              1,
+              2,
+              3
+            ],
+            "meta_episodes": [],
+            "confirmed_full_coverage": true,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [
+            1,
+            2,
+            3
+          ],
+          "episode_priority": {
+            "1": 100,
+            "2": 100,
+            "3": 100
+          },
+          "current_priority": 100,
+          "lack_episode": 3,
+          "complete": true,
+          "covered_episodes": [
+            1,
+            2,
+            3
+          ],
+          "fields": [
+            "current_priority",
+            "note",
+            "episode_priority",
+            "last_update"
+          ],
+          "updated": true
+        },
+        "progress": {
+          "note": [
+            1,
+            2,
+            3
+          ],
+          "episode_priority": {
+            "1": 100,
+            "2": 100,
+            "3": 100
+          },
+          "current_priority": 100,
+          "lack_episode": 0,
+          "complete": true,
+          "fields": [
+            "lack_episode"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    },
+    {
+      "name": "全集101不完成",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": true,
+          "current_priority": 90,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": 101,
+            "selected_episodes": [
+              1,
+              2,
+              3
+            ],
+            "meta_episodes": [],
+            "confirmed_full_coverage": true,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [
+            1,
+            2,
+            3
+          ],
+          "episode_priority": {
+            "1": 101,
+            "2": 101,
+            "3": 101
+          },
+          "current_priority": 101,
+          "lack_episode": 3,
+          "complete": false,
+          "covered_episodes": [
+            1,
+            2,
+            3
+          ],
+          "fields": [
+            "current_priority",
+            "note",
+            "episode_priority",
+            "last_update"
+          ],
+          "updated": true
+        },
+        "progress": {
+          "note": [
+            1,
+            2,
+            3
+          ],
+          "episode_priority": {
+            "1": 101,
+            "2": 101,
+            "3": 101
+          },
+          "current_priority": 101,
+          "lack_episode": 0,
+          "complete": false,
+          "fields": [
+            "lack_episode"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    },
+    {
+      "name": "低级重放不能降低逐集事实",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {
+            "1": 100,
+            "2": 90
+          },
+          "note": [
+            1,
+            2
+          ],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": 80,
+            "selected_episodes": [
+              1,
+              2
+            ],
+            "meta_episodes": [],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [
+            1,
+            2
+          ],
+          "episode_priority": {
+            "1": 100,
+            "2": 90
+          },
+          "current_priority": null,
+          "lack_episode": 3,
+          "complete": false,
+          "covered_episodes": [
+            1,
+            2
+          ],
+          "fields": [
+            "note",
+            "episode_priority",
+            "last_update"
+          ],
+          "updated": true
+        },
+        "progress": {
+          "note": [
+            1,
+            2
+          ],
+          "episode_priority": {
+            "1": 100,
+            "2": 90
+          },
+          "current_priority": 0,
+          "lack_episode": 1,
+          "complete": false,
+          "fields": [
+            "lack_episode",
+            "current_priority"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    },
+    {
+      "name": "同级重放保留逐集质量",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {
+            "1": 90
+          },
+          "note": [
+            1
+          ],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": 90,
+            "selected_episodes": [
+              1
+            ],
+            "meta_episodes": [],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [
+            1
+          ],
+          "episode_priority": {
+            "1": 90
+          },
+          "current_priority": null,
+          "lack_episode": 3,
+          "complete": false,
+          "covered_episodes": [
+            1
+          ],
+          "fields": [
+            "note",
+            "episode_priority",
+            "last_update"
+          ],
+          "updated": true
+        },
+        "progress": {
+          "note": [
+            1
+          ],
+          "episode_priority": {
+            "1": 90
+          },
+          "current_priority": 0,
+          "lack_episode": 2,
+          "complete": false,
+          "fields": [
+            "lack_episode",
+            "current_priority"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    },
+    {
+      "name": "多个资源互补全目标100",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": 100,
+            "selected_episodes": [
+              1
+            ],
+            "meta_episodes": [],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          },
+          {
+            "priority": 100,
+            "selected_episodes": [
+              2,
+              3
+            ],
+            "meta_episodes": [],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [
+            1,
+            2,
+            3
+          ],
+          "episode_priority": {
+            "1": 100,
+            "2": 100,
+            "3": 100
+          },
+          "current_priority": null,
+          "lack_episode": 3,
+          "complete": true,
+          "covered_episodes": [
+            1,
+            2,
+            3
+          ],
+          "fields": [
+            "note",
+            "episode_priority",
+            "last_update"
+          ],
+          "updated": true
+        },
+        "progress": {
+          "note": [
+            1,
+            2,
+            3
+          ],
+          "episode_priority": {
+            "1": 100,
+            "2": 100,
+            "3": 100
+          },
+          "current_priority": 100,
+          "lack_episode": 0,
+          "complete": true,
+          "fields": [
+            "lack_episode",
+            "current_priority"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    },
+    {
+      "name": "多个资源互补保留最高质量",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": 100,
+            "selected_episodes": [
+              1,
+              2
+            ],
+            "meta_episodes": [],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          },
+          {
+            "priority": 90,
+            "selected_episodes": [
+              2,
+              3
+            ],
+            "meta_episodes": [],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [
+            1,
+            2,
+            3
+          ],
+          "episode_priority": {
+            "1": 100,
+            "2": 100,
+            "3": 90
+          },
+          "current_priority": null,
+          "lack_episode": 3,
+          "complete": false,
+          "covered_episodes": [
+            1,
+            2,
+            3
+          ],
+          "fields": [
+            "note",
+            "episode_priority",
+            "last_update"
+          ],
+          "updated": true
+        },
+        "progress": {
+          "note": [
+            1,
+            2,
+            3
+          ],
+          "episode_priority": {
+            "1": 100,
+            "2": 100,
+            "3": 90
+          },
+          "current_priority": 90,
+          "lack_episode": 0,
+          "complete": false,
+          "fields": [
+            "lack_episode",
+            "current_priority"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    },
+    {
+      "name": "旧整体90展开后按集升级",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": 90,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": 100,
+            "selected_episodes": [
+              1
+            ],
+            "meta_episodes": [],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [
+            1
+          ],
+          "episode_priority": {
+            "1": 100,
+            "2": 90,
+            "3": 90
+          },
+          "current_priority": 90,
+          "lack_episode": 3,
+          "complete": false,
+          "covered_episodes": [
+            1
+          ],
+          "fields": [
+            "note",
+            "episode_priority",
+            "last_update"
+          ],
+          "updated": true
+        },
+        "progress": {
+          "note": [
+            1
+          ],
+          "episode_priority": {
+            "1": 100,
+            "2": 90,
+            "3": 90
+          },
+          "current_priority": 90,
+          "lack_episode": 0,
+          "complete": false,
+          "fields": [
+            "lack_episode",
+            "current_priority"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    },
+    {
+      "name": "普通TV也记录逐集质量而current保留",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": false,
+          "best_version_full": false,
+          "current_priority": 70,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": 90,
+            "selected_episodes": [
+              1
+            ],
+            "meta_episodes": [],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {
+          "fixture": {
+            "1": {
+              "season": 1,
+              "episodes": [
+                2,
+                3
+              ],
+              "total_episode": 3
+            }
+          }
+        }
+      },
+      "expected": {
+        "writer": {
+          "note": [
+            1
+          ],
+          "episode_priority": {
+            "1": 90
+          },
+          "current_priority": 70,
+          "lack_episode": 3,
+          "complete": false,
+          "covered_episodes": [
+            1
+          ],
+          "fields": [
+            "note",
+            "episode_priority",
+            "last_update"
+          ],
+          "updated": true
+        },
+        "progress": {
+          "note": [
+            1
+          ],
+          "episode_priority": {
+            "1": 90
+          },
+          "current_priority": 70,
+          "lack_episode": 2,
+          "complete": false,
+          "fields": [
+            "lack_episode"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    },
+    {
+      "name": "普通TV空lefts缺集归零",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": false,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": 90,
+            "selected_episodes": [
+              1
+            ],
+            "meta_episodes": [],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [
+            1
+          ],
+          "episode_priority": {
+            "1": 90
+          },
+          "current_priority": null,
+          "lack_episode": 3,
+          "complete": false,
+          "covered_episodes": [
+            1
+          ],
+          "fields": [
+            "note",
+            "episode_priority",
+            "last_update"
+          ],
+          "updated": true
+        },
+        "progress": {
+          "note": [
+            1
+          ],
+          "episode_priority": {
+            "1": 90
+          },
+          "current_priority": null,
+          "lack_episode": 0,
+          "complete": false,
+          "fields": [
+            "lack_episode"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    },
+    {
+      "name": "P普通TV记录覆盖且完成守卫仍拦截",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": false,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "P",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": 100,
+            "selected_episodes": [
+              1,
+              2,
+              3
+            ],
+            "meta_episodes": [],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [
+            1,
+            2,
+            3
+          ],
+          "episode_priority": {
+            "1": 100,
+            "2": 100,
+            "3": 100
+          },
+          "current_priority": null,
+          "lack_episode": 3,
+          "complete": false,
+          "covered_episodes": [
+            1,
+            2,
+            3
+          ],
+          "fields": [
+            "note",
+            "episode_priority",
+            "last_update"
+          ],
+          "updated": true
+        },
+        "progress": {
+          "note": [
+            1,
+            2,
+            3
+          ],
+          "episode_priority": {
+            "1": 100,
+            "2": 100,
+            "3": 100
+          },
+          "current_priority": null,
+          "lack_episode": 0,
+          "complete": false,
+          "fields": [
+            "lack_episode"
+          ]
+        },
+        "pending_state_blocks_completion": true
+      }
+    },
+    {
+      "name": "P分集仍记录及派生但完成入口阻止",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "P",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": 100,
+            "selected_episodes": [
+              1,
+              2,
+              3
+            ],
+            "meta_episodes": [],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [
+            1,
+            2,
+            3
+          ],
+          "episode_priority": {
+            "1": 100,
+            "2": 100,
+            "3": 100
+          },
+          "current_priority": null,
+          "lack_episode": 3,
+          "complete": true,
+          "covered_episodes": [
+            1,
+            2,
+            3
+          ],
+          "fields": [
+            "note",
+            "episode_priority",
+            "last_update"
+          ],
+          "updated": true
+        },
+        "progress": {
+          "note": [
+            1,
+            2,
+            3
+          ],
+          "episode_priority": {
+            "1": 100,
+            "2": 100,
+            "3": 100
+          },
+          "current_priority": 100,
+          "lack_episode": 0,
+          "complete": true,
+          "fields": [
+            "lack_episode",
+            "current_priority"
+          ]
+        },
+        "pending_state_blocks_completion": true
+      }
+    },
+    {
+      "name": "P全集仍升级但完成入口阻止",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": true,
+          "current_priority": 90,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "P",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": 100,
+            "selected_episodes": [
+              1,
+              2,
+              3
+            ],
+            "meta_episodes": [],
+            "confirmed_full_coverage": true,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [
+            1,
+            2,
+            3
+          ],
+          "episode_priority": {
+            "1": 100,
+            "2": 100,
+            "3": 100
+          },
+          "current_priority": 100,
+          "lack_episode": 3,
+          "complete": true,
+          "covered_episodes": [
+            1,
+            2,
+            3
+          ],
+          "fields": [
+            "current_priority",
+            "note",
+            "episode_priority",
+            "last_update"
+          ],
+          "updated": true
+        },
+        "progress": {
+          "note": [
+            1,
+            2,
+            3
+          ],
+          "episode_priority": {
+            "1": 100,
+            "2": 100,
+            "3": 100
+          },
+          "current_priority": 100,
+          "lack_episode": 0,
+          "complete": true,
+          "fields": [
+            "lack_episode"
+          ]
+        },
+        "pending_state_blocks_completion": true
+      }
+    },
+    {
+      "name": "零质量有note即已下载任意版本",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": 0,
+            "selected_episodes": [
+              1,
+              2,
+              3
+            ],
+            "meta_episodes": [],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [
+            1,
+            2,
+            3
+          ],
+          "episode_priority": {
+            "1": 0,
+            "2": 0,
+            "3": 0
+          },
+          "current_priority": null,
+          "lack_episode": 3,
+          "complete": false,
+          "covered_episodes": [
+            1,
+            2,
+            3
+          ],
+          "fields": [
+            "note",
+            "episode_priority",
+            "last_update"
+          ],
+          "updated": true
+        },
+        "progress": {
+          "note": [
+            1,
+            2,
+            3
+          ],
+          "episode_priority": {
+            "1": 0,
+            "2": 0,
+            "3": 0
+          },
+          "current_priority": 0,
+          "lack_episode": 0,
+          "complete": false,
+          "fields": [
+            "lack_episode",
+            "current_priority"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    },
+    {
+      "name": "负质量可写逐集但note决定已有版本",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": -1,
+            "selected_episodes": [
+              1
+            ],
+            "meta_episodes": [],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [
+            1
+          ],
+          "episode_priority": {
+            "1": -1
+          },
+          "current_priority": null,
+          "lack_episode": 3,
+          "complete": false,
+          "covered_episodes": [
+            1
+          ],
+          "fields": [
+            "note",
+            "episode_priority",
+            "last_update"
+          ],
+          "updated": true
+        },
+        "progress": {
+          "note": [
+            1
+          ],
+          "episode_priority": {
+            "1": -1
+          },
+          "current_priority": -1,
+          "lack_episode": 2,
+          "complete": false,
+          "fields": [
+            "lack_episode",
+            "current_priority"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    },
+    {
+      "name": "None质量只记覆盖note",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": null,
+            "selected_episodes": [
+              1
+            ],
+            "meta_episodes": [],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [
+            1
+          ],
+          "episode_priority": {},
+          "current_priority": null,
+          "lack_episode": 3,
+          "complete": false,
+          "covered_episodes": [
+            1
+          ],
+          "fields": [
+            "note",
+            "episode_priority",
+            "last_update"
+          ],
+          "updated": true
+        },
+        "progress": {
+          "note": [
+            1
+          ],
+          "episode_priority": {},
+          "current_priority": 0,
+          "lack_episode": 2,
+          "complete": false,
+          "fields": [
+            "lack_episode",
+            "current_priority"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    },
+    {
+      "name": "bool质量不写逐集质量",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": true,
+            "selected_episodes": [
+              1
+            ],
+            "meta_episodes": [],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [
+            1
+          ],
+          "episode_priority": {},
+          "current_priority": null,
+          "lack_episode": 3,
+          "complete": false,
+          "covered_episodes": [
+            1
+          ],
+          "fields": [
+            "note",
+            "episode_priority",
+            "last_update"
+          ],
+          "updated": true
+        },
+        "progress": {
+          "note": [
+            1
+          ],
+          "episode_priority": {},
+          "current_priority": 0,
+          "lack_episode": 2,
+          "complete": false,
+          "fields": [
+            "lack_episode",
+            "current_priority"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    },
+    {
+      "name": "文本质量不写逐集质量",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": "100",
+            "selected_episodes": [
+              1
+            ],
+            "meta_episodes": [],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [
+            1
+          ],
+          "episode_priority": {},
+          "current_priority": null,
+          "lack_episode": 3,
+          "complete": false,
+          "covered_episodes": [
+            1
+          ],
+          "fields": [
+            "note",
+            "episode_priority",
+            "last_update"
+          ],
+          "updated": true
+        },
+        "progress": {
+          "note": [
+            1
+          ],
+          "episode_priority": {},
+          "current_priority": 0,
+          "lack_episode": 2,
+          "complete": false,
+          "fields": [
+            "lack_episode",
+            "current_priority"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    },
+    {
+      "name": "非法及越界集忽略并目标去重",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 2,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": 100,
+            "selected_episodes": [
+              1,
+              "2",
+              2,
+              "bad",
+              3,
+              4
+            ],
+            "meta_episodes": [],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [
+            2,
+            3
+          ],
+          "episode_priority": {
+            "2": 100,
+            "3": 100
+          },
+          "current_priority": null,
+          "lack_episode": 3,
+          "complete": true,
+          "covered_episodes": [
+            2,
+            3
+          ],
+          "fields": [
+            "note",
+            "episode_priority",
+            "last_update"
+          ],
+          "updated": true
+        },
+        "progress": {
+          "note": [
+            2,
+            3
+          ],
+          "episode_priority": {
+            "2": 100,
+            "3": 100
+          },
+          "current_priority": 100,
+          "lack_episode": 0,
+          "complete": true,
+          "fields": [
+            "lack_episode",
+            "current_priority"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    },
+    {
+      "name": "越界覆盖即使确认也不能更新",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": true,
+          "current_priority": 90,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": 100,
+            "selected_episodes": [
+              4
+            ],
+            "meta_episodes": [],
+            "confirmed_full_coverage": true,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [],
+          "episode_priority": {},
+          "current_priority": 90,
+          "lack_episode": 3,
+          "complete": false,
+          "covered_episodes": [],
+          "fields": [],
+          "updated": false
+        },
+        "progress": {
+          "note": [],
+          "episode_priority": {},
+          "current_priority": 90,
+          "lack_episode": 3,
+          "complete": false,
+          "fields": [
+            "lack_episode"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    },
+    {
+      "name": "TMDB身份变更忽略下载",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 456,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": 100,
+            "selected_episodes": [
+              1,
+              2,
+              3
+            ],
+            "meta_episodes": [],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [],
+          "episode_priority": {},
+          "current_priority": null,
+          "lack_episode": 3,
+          "complete": false,
+          "covered_episodes": [],
+          "fields": [],
+          "updated": false
+        },
+        "progress": {
+          "note": [],
+          "episode_priority": {},
+          "current_priority": 0,
+          "lack_episode": 3,
+          "complete": false,
+          "fields": [
+            "lack_episode",
+            "current_priority"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    },
+    {
+      "name": "豆瓣身份变更忽略下载",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "changed",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": 100,
+            "selected_episodes": [
+              1,
+              2,
+              3
+            ],
+            "meta_episodes": [],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [],
+          "episode_priority": {},
+          "current_priority": null,
+          "lack_episode": 3,
+          "complete": false,
+          "covered_episodes": [],
+          "fields": [],
+          "updated": false
+        },
+        "progress": {
+          "note": [],
+          "episode_priority": {},
+          "current_priority": 0,
+          "lack_episode": 3,
+          "complete": false,
+          "fields": [
+            "lack_episode",
+            "current_priority"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    },
+    {
+      "name": "下载缺少ID仍允许目标覆盖",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": 90,
+            "selected_episodes": [
+              1
+            ],
+            "meta_episodes": [],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": null,
+            "doubanid": null,
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [
+            1
+          ],
+          "episode_priority": {
+            "1": 90
+          },
+          "current_priority": null,
+          "lack_episode": 3,
+          "complete": false,
+          "covered_episodes": [
+            1
+          ],
+          "fields": [
+            "note",
+            "episode_priority",
+            "last_update"
+          ],
+          "updated": true
+        },
+        "progress": {
+          "note": [
+            1
+          ],
+          "episode_priority": {
+            "1": 90
+          },
+          "current_priority": 0,
+          "lack_episode": 2,
+          "complete": false,
+          "fields": [
+            "lack_episode",
+            "current_priority"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    },
+    {
+      "name": "媒体类型改变忽略下载",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": 100,
+            "selected_episodes": [
+              1
+            ],
+            "meta_episodes": [],
+            "confirmed_full_coverage": false,
+            "media_type": "电影",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [],
+          "episode_priority": {},
+          "current_priority": null,
+          "lack_episode": 3,
+          "complete": false,
+          "covered_episodes": [],
+          "fields": [],
+          "updated": false
+        },
+        "progress": {
+          "note": [],
+          "episode_priority": {},
+          "current_priority": 0,
+          "lack_episode": 3,
+          "complete": false,
+          "fields": [
+            "lack_episode",
+            "current_priority"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    },
+    {
+      "name": "下载后当前快照已切为全集且未确认",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": true,
+          "current_priority": 90,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": 100,
+            "selected_episodes": [
+              1,
+              2,
+              3
+            ],
+            "meta_episodes": [],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [
+            1,
+            2,
+            3
+          ],
+          "episode_priority": {
+            "1": 100,
+            "2": 100,
+            "3": 100
+          },
+          "current_priority": 90,
+          "lack_episode": 3,
+          "complete": false,
+          "covered_episodes": [
+            1,
+            2,
+            3
+          ],
+          "fields": [
+            "note",
+            "episode_priority",
+            "last_update"
+          ],
+          "updated": true
+        },
+        "progress": {
+          "note": [
+            1,
+            2,
+            3
+          ],
+          "episode_priority": {
+            "1": 100,
+            "2": 100,
+            "3": 100
+          },
+          "current_priority": 90,
+          "lack_episode": 0,
+          "complete": false,
+          "fields": [
+            "lack_episode"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    },
+    {
+      "name": "下载后当前快照已关闭洗版",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": false,
+          "best_version_full": true,
+          "current_priority": 90,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": 100,
+            "selected_episodes": [
+              1,
+              2,
+              3
+            ],
+            "meta_episodes": [],
+            "confirmed_full_coverage": true,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [
+            1,
+            2,
+            3
+          ],
+          "episode_priority": {
+            "1": 100,
+            "2": 100,
+            "3": 100
+          },
+          "current_priority": 90,
+          "lack_episode": 3,
+          "complete": false,
+          "covered_episodes": [
+            1,
+            2,
+            3
+          ],
+          "fields": [
+            "note",
+            "episode_priority",
+            "last_update"
+          ],
+          "updated": true
+        },
+        "progress": {
+          "note": [
+            1,
+            2,
+            3
+          ],
+          "episode_priority": {
+            "1": 100,
+            "2": 100,
+            "3": 100
+          },
+          "current_priority": 90,
+          "lack_episode": 0,
+          "complete": false,
+          "fields": [
+            "lack_episode"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    },
+    {
+      "name": "当前分集模式按旧逐集事实派生整体",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": 100,
+          "episode_priority": {
+            "1": 90,
+            "2": 100,
+            "3": 100
+          },
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [],
+          "episode_priority": {
+            "1": 90,
+            "2": 100,
+            "3": 100
+          },
+          "current_priority": 100,
+          "lack_episode": 3,
+          "complete": false,
+          "covered_episodes": [],
+          "fields": [],
+          "updated": false
+        },
+        "progress": {
+          "note": [],
+          "episode_priority": {
+            "1": 90,
+            "2": 100,
+            "3": 100
+          },
+          "current_priority": 90,
+          "lack_episode": 0,
+          "complete": false,
+          "fields": [
+            "lack_episode",
+            "current_priority"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    },
+    {
+      "name": "没有下载仅progress派生已有事实",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {
+            "1": 90,
+            "2": 100,
+            "3": 100
+          },
+          "note": [
+            1
+          ],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [
+            1
+          ],
+          "episode_priority": {
+            "1": 90,
+            "2": 100,
+            "3": 100
+          },
+          "current_priority": null,
+          "lack_episode": 3,
+          "complete": false,
+          "covered_episodes": [],
+          "fields": [],
+          "updated": false
+        },
+        "progress": {
+          "note": [
+            1
+          ],
+          "episode_priority": {
+            "1": 90,
+            "2": 100,
+            "3": 100
+          },
+          "current_priority": 90,
+          "lack_episode": 0,
+          "complete": false,
+          "fields": [
+            "lack_episode",
+            "current_priority"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    },
+    {
+      "name": "无目标确认覆盖不猜集",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 4,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": true,
+          "current_priority": 90,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "downloads": [
+          {
+            "priority": 100,
+            "selected_episodes": null,
+            "meta_episodes": [],
+            "confirmed_full_coverage": true,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ]
+          }
+        ],
+        "no_exists": {}
+      },
+      "expected": {
+        "writer": {
+          "note": [],
+          "episode_priority": {},
+          "current_priority": 90,
+          "lack_episode": 3,
+          "complete": false,
+          "covered_episodes": [],
+          "fields": [],
+          "updated": false
+        },
+        "progress": {
+          "note": [],
+          "episode_priority": {},
+          "current_priority": 90,
+          "lack_episode": 0,
+          "complete": false,
+          "fields": [
+            "lack_episode"
+          ]
+        },
+        "pending_state_blocks_completion": false
+      }
+    }
+  ],
+  "resources": [
+    {
+      "name": "目标全集元数据",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": true,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "seasons": [
+          1
+        ],
+        "meta_episodes": [
+          1,
+          2,
+          3
+        ]
+      },
+      "expected": {
+        "full_resource": true,
+        "accepted_resource": true
+      }
+    },
+    {
+      "name": "元数据部分覆盖",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": true,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "seasons": [
+          1
+        ],
+        "meta_episodes": [
+          1,
+          2
+        ]
+      },
+      "expected": {
+        "full_resource": false,
+        "accepted_resource": false
+      }
+    },
+    {
+      "name": "无集号整季候选后续仍需解析",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": true,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "seasons": [
+          1
+        ],
+        "meta_episodes": []
+      },
+      "expected": {
+        "full_resource": true,
+        "accepted_resource": true
+      }
+    },
+    {
+      "name": "跨季资源拒绝全集",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": true,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "seasons": [
+          1,
+          2
+        ],
+        "meta_episodes": []
+      },
+      "expected": {
+        "full_resource": false,
+        "accepted_resource": false
+      }
+    },
+    {
+      "name": "错误季拒绝全集",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": true,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "seasons": [
+          2
+        ],
+        "meta_episodes": [
+          1,
+          2,
+          3
+        ]
+      },
+      "expected": {
+        "full_resource": false,
+        "accepted_resource": false
+      }
+    },
+    {
+      "name": "空季默认第一季",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": true,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "seasons": [],
+        "meta_episodes": []
+      },
+      "expected": {
+        "full_resource": true,
+        "accepted_resource": true
+      }
+    },
+    {
+      "name": "起始集之后完整覆盖",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 2,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": true,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "seasons": [
+          1
+        ],
+        "meta_episodes": [
+          2,
+          3
+        ]
+      },
+      "expected": {
+        "full_resource": true,
+        "accepted_resource": true
+      }
+    },
+    {
+      "name": "分集不套全集资源约束",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "seasons": [
+          2
+        ],
+        "meta_episodes": [
+          1
+        ]
+      },
+      "expected": {
+        "full_resource": false,
+        "accepted_resource": true
+      }
+    }
+  ],
+  "full_pack_first": [
+    {
+      "name": "整包尝试成功直接返回",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {
+            "1": 90,
+            "2": 90,
+            "3": 90
+          },
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "contexts": [
+          {
+            "priority": 100,
+            "selected_episodes": null,
+            "meta_episodes": [],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ],
+            "name": "full"
+          },
+          {
+            "priority": 100,
+            "selected_episodes": null,
+            "meta_episodes": [
+              1
+            ],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ],
+            "name": "episode"
+          }
+        ],
+        "full_pack_download_succeeded": true
+      },
+      "expected": {
+        "calls": [
+          {
+            "contexts": [
+              "full"
+            ],
+            "no_exists": {
+              "fixture": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": true
+                }
+              }
+            }
+          }
+        ],
+        "downloads": [
+          "full accepted"
+        ],
+        "lefts": {
+          "full": {}
+        }
+      }
+    },
+    {
+      "name": "整包下载失败回退原按集候选",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {
+            "1": 90,
+            "2": 90,
+            "3": 90
+          },
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "contexts": [
+          {
+            "priority": 100,
+            "selected_episodes": null,
+            "meta_episodes": [],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ],
+            "name": "full"
+          },
+          {
+            "priority": 100,
+            "selected_episodes": null,
+            "meta_episodes": [
+              1
+            ],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ],
+            "name": "episode"
+          }
+        ],
+        "full_pack_download_succeeded": false
+      },
+      "expected": {
+        "calls": [
+          {
+            "contexts": [
+              "full"
+            ],
+            "no_exists": {
+              "fixture": {
+                "1": {
+                  "season": 1,
+                  "episodes": [],
+                  "total_episode": 3,
+                  "start_episode": 1,
+                  "require_complete_coverage": true
+                }
+              }
+            }
+          },
+          {
+            "contexts": [
+              "full",
+              "episode"
+            ],
+            "no_exists": {
+              "original": {}
+            }
+          }
+        ],
+        "downloads": [],
+        "lefts": {
+          "fallback": {}
+        }
+      }
+    },
+    {
+      "name": "任一目标同质量则不尝试整包",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {
+            "1": 100,
+            "2": 90,
+            "3": 90
+          },
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "contexts": [
+          {
+            "priority": 100,
+            "selected_episodes": null,
+            "meta_episodes": [],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ],
+            "name": "full"
+          },
+          {
+            "priority": 100,
+            "selected_episodes": null,
+            "meta_episodes": [
+              1
+            ],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ],
+            "name": "episode"
+          }
+        ],
+        "full_pack_download_succeeded": null
+      },
+      "expected": {
+        "calls": [
+          {
+            "contexts": [
+              "full",
+              "episode"
+            ],
+            "no_exists": {
+              "original": {}
+            }
+          }
+        ],
+        "downloads": [],
+        "lefts": {
+          "fallback": {}
+        }
+      }
+    },
+    {
+      "name": "全集模式直接普通batch路径",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": true,
+          "current_priority": 90,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "contexts": [
+          {
+            "priority": 100,
+            "selected_episodes": null,
+            "meta_episodes": [],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ],
+            "name": "full"
+          },
+          {
+            "priority": 100,
+            "selected_episodes": null,
+            "meta_episodes": [
+              1
+            ],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ],
+            "name": "episode"
+          }
+        ],
+        "full_pack_download_succeeded": null
+      },
+      "expected": {
+        "calls": [
+          {
+            "contexts": [
+              "full",
+              "episode"
+            ],
+            "no_exists": {
+              "original": {}
+            }
+          }
+        ],
+        "downloads": [],
+        "lefts": {
+          "fallback": {}
+        }
+      }
+    },
+    {
+      "name": "普通TV直接普通batch路径",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": false,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "contexts": [
+          {
+            "priority": 100,
+            "selected_episodes": null,
+            "meta_episodes": [],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ],
+            "name": "full"
+          },
+          {
+            "priority": 100,
+            "selected_episodes": null,
+            "meta_episodes": [
+              1
+            ],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ],
+            "name": "episode"
+          }
+        ],
+        "full_pack_download_succeeded": null
+      },
+      "expected": {
+        "calls": [
+          {
+            "contexts": [
+              "full",
+              "episode"
+            ],
+            "no_exists": {
+              "original": {}
+            }
+          }
+        ],
+        "downloads": [],
+        "lefts": {
+          "fallback": {}
+        }
+      }
+    },
+    {
+      "name": "空目标直接普通batch路径",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 4,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "contexts": [
+          {
+            "priority": 100,
+            "selected_episodes": null,
+            "meta_episodes": [],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ],
+            "name": "full"
+          },
+          {
+            "priority": 100,
+            "selected_episodes": null,
+            "meta_episodes": [
+              1
+            ],
+            "confirmed_full_coverage": false,
+            "media_type": "电视剧",
+            "tmdbid": 123,
+            "doubanid": "db123",
+            "seasons": [
+              1
+            ],
+            "name": "episode"
+          }
+        ],
+        "full_pack_download_succeeded": null
+      },
+      "expected": {
+        "calls": [
+          {
+            "contexts": [
+              "full",
+              "episode"
+            ],
+            "no_exists": {
+              "original": {}
+            }
+          }
+        ],
+        "downloads": [],
+        "lefts": {
+          "fallback": {}
+        }
+      }
+    }
+  ],
+  "total_changes": [
+    {
+      "name": "分集扩集新增目标质量为零",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": 100,
+          "episode_priority": {
+            "1": 100,
+            "2": 100,
+            "3": 100
+          },
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "new_total_episode": 4
+      },
+      "expected": {
+        "note": [],
+        "episode_priority": {
+          "1": 100,
+          "2": 100,
+          "3": 100
+        },
+        "current_priority": 0,
+        "lack_episode": 1,
+        "complete": false,
+        "total_episode": 4,
+        "fields": [
+          "total_episode",
+          "episode_priority",
+          "current_priority",
+          "lack_episode"
+        ]
+      }
+    },
+    {
+      "name": "旧整体质量扩集不回填新目标",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": 90,
+          "episode_priority": {},
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "new_total_episode": 4
+      },
+      "expected": {
+        "note": [],
+        "episode_priority": {
+          "1": 90,
+          "2": 90,
+          "3": 90
+        },
+        "current_priority": 0,
+        "lack_episode": 1,
+        "complete": false,
+        "total_episode": 4,
+        "fields": [
+          "total_episode",
+          "episode_priority",
+          "current_priority",
+          "lack_episode"
+        ]
+      }
+    },
+    {
+      "name": "分集缩集裁剪旧按集事实",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": null,
+          "episode_priority": {
+            "1": 100,
+            "2": 100,
+            "3": 90
+          },
+          "note": [
+            1,
+            2,
+            3
+          ],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "new_total_episode": 2
+      },
+      "expected": {
+        "note": [
+          1,
+          2,
+          3
+        ],
+        "episode_priority": {
+          "1": 100,
+          "2": 100
+        },
+        "current_priority": 100,
+        "lack_episode": 0,
+        "complete": true,
+        "total_episode": 2,
+        "fields": [
+          "total_episode",
+          "episode_priority",
+          "current_priority",
+          "lack_episode"
+        ]
+      }
+    },
+    {
+      "name": "全集扩集重置准入基线",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": true,
+          "current_priority": 100,
+          "episode_priority": {},
+          "note": [
+            1,
+            2,
+            3
+          ],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "new_total_episode": 4
+      },
+      "expected": {
+        "note": [
+          1,
+          2,
+          3
+        ],
+        "episode_priority": {},
+        "current_priority": 0,
+        "lack_episode": 1,
+        "complete": false,
+        "total_episode": 4,
+        "fields": [
+          "total_episode",
+          "episode_priority",
+          "current_priority",
+          "lack_episode"
+        ]
+      }
+    },
+    {
+      "name": "全集缩集保留准入基线",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 1,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": true,
+          "current_priority": 100,
+          "episode_priority": {},
+          "note": [
+            1,
+            2,
+            3
+          ],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "new_total_episode": 2
+      },
+      "expected": {
+        "note": [
+          1,
+          2,
+          3
+        ],
+        "episode_priority": {},
+        "current_priority": 100,
+        "lack_episode": 0,
+        "complete": true,
+        "total_episode": 2,
+        "fields": [
+          "total_episode",
+          "episode_priority",
+          "current_priority",
+          "lack_episode"
+        ]
+      }
+    },
+    {
+      "name": "缩集到空目标分集current归零",
+      "input": {
+        "subscribe": {
+          "type": "电视剧",
+          "season": 1,
+          "start_episode": 3,
+          "total_episode": 3,
+          "best_version": true,
+          "best_version_full": false,
+          "current_priority": 100,
+          "episode_priority": {
+            "3": 100
+          },
+          "note": [],
+          "id": 1,
+          "name": "Fixture TV",
+          "state": "R",
+          "tmdbid": 123,
+          "doubanid": "db123",
+          "lack_episode": 3,
+          "last_update": null
+        },
+        "new_total_episode": 2
+      },
+      "expected": {
+        "note": [],
+        "episode_priority": {},
+        "current_priority": 0,
+        "lack_episode": 0,
+        "complete": false,
+        "total_episode": 2,
+        "fields": [
+          "total_episode",
+          "episode_priority",
+          "current_priority",
+          "lack_episode"
+        ]
+      }
+    }
+  ],
+  "limitations": [
+    "仅执行冻结 subscribe.py 所选实际方法；不是完整 V2 应用、下载器或数据库差分。",
+    "数据库 patch 仅在内存同步；datetime 固定，日志丢弃，媒体键和下载器为离线桩。",
+    "P 只执行实际完成入口的首个 guard；完成事件、外部策略、历史写入与删除不在本语料范围。",
+    "V2 writer 信任 confirmed_full_coverage；确认且部分实际选集会提升全集 current，Go writer 按同一规则执行。",
+    "V2 在选集、元数据均空且覆盖已确认时展开全部目标，Go writer 保留该回填规则。",
+    "上下文采用调用时订阅快照；CAS、不可变计划、暂停和 current intent 保护由 Go 事务测试覆盖。",
+    "普通 TV 缺集计算采用固定离线 no_exists；没有执行媒体库查询。"
+  ]
+}

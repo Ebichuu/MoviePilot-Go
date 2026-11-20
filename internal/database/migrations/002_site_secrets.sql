@@ -1,0 +1,5 @@
+-- +goose Up
+ALTER TABLE sites ADD COLUMN IF NOT EXISTS secrets TEXT NOT NULL DEFAULT '';
+
+-- +goose Down
+ALTER TABLE sites DROP COLUMN IF EXISTS secrets;

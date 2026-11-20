@@ -1,0 +1,156 @@
+{
+  "version": "2026-09-29",
+  "source": {
+    "reference": "MoviePilot V2 v2.15.6",
+    "commit": "458c08a137bedb4c2acebcfbbf7f6c23ef35bfbf",
+    "repo": "D:\\Projects\\moviepilot_v2",
+    "files": [
+      {"path": "app/chain/subscribe.py", "lines": "119-260", "note": "按集事实派生、目标范围与洗版待办集"},
+      {"path": "app/chain/subscribe.py", "lines": "336-337", "note": "订阅默认值 current_priority=None、episode_priority={}"}
+    ]
+  },
+  "normalization_rules": {
+    "episode_priority": {
+      "reference": "app/chain/subscribe.py:143-158",
+      "rules": [
+        "非对象输入归一化为空对象",
+        "键为 null 或值为 null 的项整项丢弃",
+        "键或值无法转换为整数时整项丢弃",
+        "结果键统一为十进制字符串，值为整数"
+      ]
+    },
+    "episode_priority_source": {
+      "reference": "app/chain/subscribe.py:161-181",
+      "rules": [
+        "已有非空 episode_priority 时直接使用",
+        "否则仅当 best_version 为真、不是全集洗版、类型为电视剧且 current_priority 非空时，按目标范围把 current_priority 展开为逐集字典",
+        "其余情况返回空字典"
+      ]
+    },
+    "target_episodes": {
+      "reference": "app/chain/subscribe.py:191-203",
+      "rules": [
+        "仅电视剧参与",
+        "start_episode 缺省 1",
+        "total_episode 依次取参数、订阅值、0",
+        "total_episode < start_episode 时返回空",
+        "否则返回闭区间 [start_episode, total_episode]"
+      ]
+    }
+  },
+  "cases": [
+    {
+      "name": "normalized_per_episode_state",
+      "reference": "app/chain/subscribe.py:143-158",
+      "function": "normalize_episode_priority",
+      "input": {"2": 100, "3": null, "bad": 90, "5": "80", "6": "9.5"},
+      "expected": {"2": 100, "5": 80}
+    },
+    {
+      "name": "episode_priority_prefers_own_state",
+      "reference": "app/chain/subscribe.py:161-181",
+      "function": "get_episode_priority",
+      "input": {
+        "type": "电视剧", "best_version": 1, "best_version_full": 0,
+        "current_priority": 90, "episode_priority": {"3": 100},
+        "start_episode": 3, "total_episode": 5
+      },
+      "expected": {"3": 100}
+    },
+    {
+      "name": "per_episode_fills_from_current_priority",
+      "reference": "app/chain/subscribe.py:161-181",
+      "function": "get_episode_priority",
+      "input": {
+        "type": "电视剧", "best_version": 1, "best_version_full": 0,
+        "current_priority": 100, "episode_priority": {},
+        "start_episode": 3, "total_episode": 5
+      },
+      "expected": {"3": 100, "4": 100, "5": 100}
+    },
+    {
+      "name": "full_best_version_does_not_fill_per_episode",
+      "reference": "app/chain/subscribe.py:161-181",
+      "function": "get_episode_priority",
+      "input": {
+        "type": "电视剧", "best_version": 1, "best_version_full": 1,
+        "current_priority": 100, "episode_priority": {},
+        "start_episode": 3, "total_episode": 5
+      },
+      "expected": {}
+    },
+    {
+      "name": "missing_best_version_never_fills",
+      "reference": "app/chain/subscribe.py:161-181",
+      "function": "get_episode_priority",
+      "input": {
+        "type": "电视剧", "best_version": 0, "best_version_full": 0,
+        "current_priority": 100, "episode_priority": {},
+        "start_episode": 1, "total_episode": 3
+      },
+      "expected": {}
+    },
+    {
+      "name": "target_episode_range_boundaries",
+      "reference": "app/chain/subscribe.py:191-203",
+      "function": "best_version_target_episodes",
+      "cases": [
+        {"input": {"type": "电视剧", "start_episode": null, "total_episode": 3}, "expected": [1, 2, 3]},
+        {"input": {"type": "电视剧", "start_episode": 3, "total_episode": 5}, "expected": [3, 4, 5]},
+        {"input": {"type": "电视剧", "start_episode": 5, "total_episode": 3}, "expected": []},
+        {"input": {"type": "电视剧", "start_episode": 3, "total_episode": 0}, "expected": []},
+        {"input": {"type": "电影", "start_episode": 1, "total_episode": 3}, "expected": []}
+      ]
+    },
+    {
+      "name": "downloaded_any_version_union",
+      "reference": "app/chain/subscribe.py:206-240",
+      "function": "downloaded_best_version_episodes",
+      "input": {
+        "type": "电视剧", "start_episode": 3, "total_episode": 5,
+        "note": ["2", 4], "episode_priority": {"3": 0, "4": 90, "5": 100},
+        "best_version": 1, "best_version_full": 0, "current_priority": null
+      },
+      "expected": [4, 5]
+    },
+    {
+      "name": "pending_best_version_episodes",
+      "reference": "app/chain/subscribe.py:243-260",
+      "function": "pending_best_version_episodes_with_priority",
+      "input": {
+        "type": "电视剧", "start_episode": 3, "total_episode": 5,
+        "episode_priority": {"3": 100, "4": 90, "5": 100}
+      },
+      "expected": [4]
+    },
+    {
+      "name": "go_completion_counting",
+      "reference": "internal/database/store.go:129-168",
+      "function": "completedSubscriptionEpisode",
+      "cases": [
+        {"input": {"total_episode": 12, "start_episode": 3, "best_version": 1, "best_version_full": 1, "current_priority": 100}, "expected": 12},
+        {"input": {"total_episode": 12, "start_episode": 3, "best_version": 1, "best_version_full": 1, "current_priority": 90}, "expected": 2},
+        {"input": {"total_episode": 5, "start_episode": 3, "best_version": 1, "episode_priority": {"2": 100, "3": 100, "4": 90, "5": 100}}, "expected": 4},
+        {"input": {"total_episode": 5, "start_episode": 3, "best_version": 1, "current_priority": 100}, "expected": 5},
+        {"input": {"total_episode": 5, "start_episode": 3, "lack_episode": 2}, "expected": 3}
+      ]
+    },
+    {
+      "name": "go_best_version_acceptance_patch",
+      "reference": "internal/database/download_intent_acceptance_progress.go:39-84",
+      "function": "buildDownloadIntentAcceptanceProgressPatch",
+      "cases": [
+        {"input": {"media_type": "电视剧", "config": {"best_version": 1}, "consumed_episodes": [{"season": 1, "episode": 3}]}, "expected_patch": {}},
+        {"input": {"media_type": "电视剧", "config": {"best_version": true}, "consumed_episodes": []}, "expected_patch": {}},
+        {"input": {"media_type": "电视剧", "config": {"best_version": 0}, "consumed_episodes": [{"season": 1, "episode": 3}]}, "expected_patch": {"note": [3], "lack_episode": 0}},
+        {"input": {"media_type": "电影", "config": {}, "consumed_episodes": []}, "expected_patch": {"note": [1], "lack_episode": 0}}
+      ]
+    }
+  ],
+  "open_gaps": [
+    "progress 入口按目标范围最低按集优先级派生 current_priority 尚未实现",
+    "全集覆盖 writer 与电影 current_priority writer 尚未实现",
+    "已下载任意版本与仍需洗版两个派生查询尚未作为独立生产入口",
+    "洗版候选质量准入（best_version 候选质量高于基线才接受）尚未实现"
+  ]
+}

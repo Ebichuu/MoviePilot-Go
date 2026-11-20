@@ -1,0 +1,49 @@
+MoviePilot Go
+Copyright (C) 2026 MoviePilot Go contributors
+
+本项目的完整许可证为 GNU General Public License v3.0，见根目录 LICENSE 文件。
+
+一、项目来源与致谢
+--------------------------------
+本项目源自 MoviePilot：
+
+    原项目：MoviePilot
+    地址：  https://github.com/jxxghp/MoviePilot
+    作者：  jxxghp 及原项目贡献者
+    许可：  GPL-3.0
+
+本项目是它的 Go 重写实现，目标是在 HTTP 接口、数据结构与业务语义上兼容原项目
+v2.15.6。上游的 Python 源码只作为对照基线，**不随本项目分发**；其编译后的 Web
+前端静态资源随本项目分发（见第二条）。原项目及其作者对本项目所继承的契约、结构
+与业务语义享有著作权，本项目不主张这些内容的著作权，仅对 Go 实现部分的改动负责。
+感谢原项目作者与贡献者的工作。
+
+上游同样以 GPL-3.0 发布，因此本项目沿用同一许可证。
+
+二、随本项目分发的第三方产物
+------------------------------
+1. Web 前端静态资源 `web/dist/**`
+   来源：MoviePilot-Frontend v2.15.6（https://github.com/jxxghp/MoviePilot-Frontend）
+   许可：GPL-3.0
+   说明：由 `Dockerfile` 从上游 Release 下载并按 sha256 校验，构建产物不改动其源码。
+        前端为其作者版权作品，本项目不主张其著作权。
+
+2. Go 依赖
+   详见 `go.mod` / `go.sum`，各自按其模块声明的许可证分发，主要包括：
+   - github.com/jackc/pgx/v5（MIT）
+   - github.com/pressly/goose/v3（MIT 之外的条款见模块内 LICENSE）
+   - modernc.org/sqlite（BSD-3-Clause）
+   - github.com/golang-jwt/jwt/v5（MIT）
+   - golang.org/x/crypto（BSD-3-Clause）
+   各依赖的许可证文本位于对应模块目录内。
+
+三、修改声明
+--------------
+本项目相对上游的改动：以 Go 重写服务端实现，保留 V2 的 HTTP 契约与数据结构；
+新增若干 V2 不具备的管理能力（整库备份/恢复接口、V2 SQLite 数据迁移子命令、
+登录失败限流）。这些改动的源代码随本仓库一并提供。
+
+四、源代码获取
+--------------
+按 GPL-3.0 第 6 条，任何收到本程序二进制的人都有权获得对应源代码；
+分发二进制时请一并提供本仓库源码或书面提供获取途径。

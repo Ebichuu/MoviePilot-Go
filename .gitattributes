@@ -1,0 +1,22 @@
+* text=auto eol=lf
+
+# 二进制/生成物：不做换行符转换
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.zip binary
+*.gz binary
+*.mp4 binary
+*.woff binary
+*.woff2 binary
+
+# Windows 脚本保持 CRLF，避免 PowerShell 5 解析异常
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Shell 脚本保持 LF
+*.sh text eol=lf
+Dockerfile text eol=lf

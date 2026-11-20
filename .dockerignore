@@ -1,0 +1,42 @@
+.git
+.gitignore
+.cache
+.gocache
+.tmp
+artifacts
+web/dist
+**/.npm-cache
+**/node_modules
+
+# Local configuration, secrets, and mutable data.
+.env
+.env.*
+!.env.example
+config
+media
+downloads
+
+# Host build outputs and coverage/profiling artifacts.
+*.exe
+*.test
+*.out
+*.prof
+*.cover
+*.log
+coverage*.txt
+coverage*.html
+coverage-*
+$cov
+$cover
+$coverPath
+/fixture
+
+# Editor, OS, and transient test files.
+.idea
+.vscode
+.DS_Store
+Thumbs.db
+tmp
+temp
+test-results
+playwright-report
