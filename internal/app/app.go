@@ -30,7 +30,6 @@ import (
 	"github.com/moviepilot-go/moviepilot-go/internal/scrapeflow"
 	"github.com/moviepilot-go/moviepilot-go/internal/scraper"
 	"github.com/moviepilot-go/moviepilot-go/internal/siteflow"
-	"github.com/moviepilot-go/moviepilot-go/internal/storage"
 	"github.com/moviepilot-go/moviepilot-go/internal/subscriptionflow"
 )
 
@@ -506,42 +505,8 @@ func Run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
 	); syncer != nil {
 		cookieCloud = syncer
 	}
-	var storageProvider storage.Provider
-	if storageRoot := strings.TrimSpace(cfg.StorageLocalPath); storageRoot != "" {
-		storageProvider = storage.NewLocalProvider(map[string]string{"local": storageRoot})
-	}
-	if rcloneURL := strings.TrimSpace(cfg.StorageRcloneURL); rcloneURL != "" {
-		if rclone, rcloneErr := storage.NewRcloneProvider(storage.RcloneConfig{
-			URL: rcloneURL, FileSystem: cfg.StorageRcloneFS,
-			Username: cfg.StorageRcloneUsername, Password: cfg.StorageRclonePassword,
-		}); rcloneErr == nil {
-			registry, _ := storageProvider.(*storage.ProviderRegistry)
-			if registry == nil {
-				registry = storage.NewProviderRegistry()
-				if storageProvider != nil {
-					registry.Register("local", storageProvider)
-				}
-			}
-			registry.Register(rclone.Name(), rclone)
-			storageProvider = registry
-		}
-	}
-	if alistURL := strings.TrimSpace(cfg.StorageAlistURL); alistURL != "" {
-		if alist, alistErr := storage.NewAlistProvider(storage.AlistConfig{
-			URL: alistURL, Username: cfg.StorageAlistUsername,
-			Password: cfg.StorageAlistPassword, Root: cfg.StorageAlistRoot,
-		}); alistErr == nil {
-			registry, _ := storageProvider.(*storage.ProviderRegistry)
-			if registry == nil {
-				registry = storage.NewProviderRegistry()
-				if storageProvider != nil {
-					registry.Register("local", storageProvider)
-				}
-			}
-			registry.Register(alist.Name(), alist)
-			storageProvider = registry
-		}
-	}
+	storageProvider := buildStorageProvider(ctx, cfg, store, logger)
+	subtitleCoordinator := buildSubtitleCoordinator(cfg, logger)
 	mediaDiscover := newMediaDiscover(cfg, metadataHTTP)
 	doctorRunner := newDoctorRunner(cfg, db, redisCache, notificationRegistry, downloadReconcileHandler, mediaDiscover)
 	pluginState, err := pluginStateStore(store)
@@ -642,6 +607,7 @@ func Run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
 		CookieCloud:                cookieCloud,
 		WebPush:                    webPushDispatcherFrom(webPushSender),
 		Storage:                    storageProvider,
+		Subtitle:                   subtitleCoordinator,
 	})
 	server := &http.Server{
 		Addr:              cfg.HTTPAddr,

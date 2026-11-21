@@ -51,6 +51,8 @@ const (
 	defaultCookieCloudHost     = "https://movie-pilot.org/cookiecloud"
 	defaultCookieCloudInterval = 24 * time.Hour
 	defaultStorageAlistRoot    = "/"
+	defaultStorageSMBPort      = 445
+	defaultSubtitleLanguages   = "zh-cn,zh-tw,en"
 	defaultLoginMaxFailures    = 5
 	defaultLoginIPMaxFailures  = 20
 	defaultLoginIPWindow       = 10 * time.Minute
@@ -125,15 +127,35 @@ type Config struct {
 	CookieCloudInterval    time.Duration
 	CookieCloudBlacklist   []string
 
-	StorageLocalPath      string
-	StorageRcloneURL      string
-	StorageRcloneFS       string
-	StorageRcloneUsername string
-	StorageRclonePassword string
-	StorageAlistURL       string
-	StorageAlistUsername  string
-	StorageAlistPassword  string
-	StorageAlistRoot      string
+	StorageLocalPath          string
+	StorageRcloneURL          string
+	StorageRcloneFS           string
+	StorageRcloneUsername     string
+	StorageRclonePassword     string
+	StorageAlistURL           string
+	StorageAlistUsername      string
+	StorageAlistPassword      string
+	StorageAlistRoot          string
+	StorageSMBHost            string
+	StorageSMBPort            int
+	StorageSMBShare           string
+	StorageSMBUsername        string
+	StorageSMBPassword        string
+	StorageSMBDomain          string
+	StorageSMBRoot            string
+	StorageAlipanAppID        string
+	StorageAlipanAccessToken  string
+	StorageAlipanRefreshToken string
+	StorageAlipanDriveID      string
+	StorageU115AppID          string
+	StorageU115AuthServer     string
+	StorageU115AccessToken    string
+	StorageU115RefreshToken   string
+
+	OpenSubtitlesAPIKey string
+	OpenSubtitlesToken  string
+	AssrtToken          string
+	SubtitleLanguages   []string
 
 	VAPIDPrivateKey  string
 	VAPIDPublicKey   string
@@ -243,15 +265,35 @@ func Load() (Config, error) {
 		CookieCloudInterval:    defaultCookieCloudInterval,
 		CookieCloudBlacklist:   parseCSV(lookup("COOKIECLOUD_BLACKLIST")),
 
-		StorageLocalPath:      lookup("MOVIEPILOT_STORAGE_LOCAL_PATH"),
-		StorageRcloneURL:      lookup("MOVIEPILOT_STORAGE_RCLONE_URL"),
-		StorageRcloneFS:       lookup("MOVIEPILOT_STORAGE_RCLONE_FS"),
-		StorageRcloneUsername: lookup("MOVIEPILOT_STORAGE_RCLONE_USERNAME"),
-		StorageRclonePassword: lookup("MOVIEPILOT_STORAGE_RCLONE_PASSWORD"),
-		StorageAlistURL:       lookup("MOVIEPILOT_STORAGE_ALIST_URL"),
-		StorageAlistUsername:  lookup("MOVIEPILOT_STORAGE_ALIST_USERNAME"),
-		StorageAlistPassword:  lookup("MOVIEPILOT_STORAGE_ALIST_PASSWORD"),
-		StorageAlistRoot:      defaultString(lookup("MOVIEPILOT_STORAGE_ALIST_ROOT"), defaultStorageAlistRoot),
+		StorageLocalPath:          lookup("MOVIEPILOT_STORAGE_LOCAL_PATH"),
+		StorageRcloneURL:          lookup("MOVIEPILOT_STORAGE_RCLONE_URL"),
+		StorageRcloneFS:           lookup("MOVIEPILOT_STORAGE_RCLONE_FS"),
+		StorageRcloneUsername:     lookup("MOVIEPILOT_STORAGE_RCLONE_USERNAME"),
+		StorageRclonePassword:     lookup("MOVIEPILOT_STORAGE_RCLONE_PASSWORD"),
+		StorageAlistURL:           lookup("MOVIEPILOT_STORAGE_ALIST_URL"),
+		StorageAlistUsername:      lookup("MOVIEPILOT_STORAGE_ALIST_USERNAME"),
+		StorageAlistPassword:      lookup("MOVIEPILOT_STORAGE_ALIST_PASSWORD"),
+		StorageAlistRoot:          defaultString(lookup("MOVIEPILOT_STORAGE_ALIST_ROOT"), defaultStorageAlistRoot),
+		StorageSMBHost:            lookup("MOVIEPILOT_STORAGE_SMB_HOST"),
+		StorageSMBPort:            defaultStorageSMBPort,
+		StorageSMBShare:           lookup("MOVIEPILOT_STORAGE_SMB_SHARE"),
+		StorageSMBUsername:        lookup("MOVIEPILOT_STORAGE_SMB_USERNAME"),
+		StorageSMBPassword:        lookup("MOVIEPILOT_STORAGE_SMB_PASSWORD"),
+		StorageSMBDomain:          lookup("MOVIEPILOT_STORAGE_SMB_DOMAIN"),
+		StorageSMBRoot:            lookup("MOVIEPILOT_STORAGE_SMB_ROOT"),
+		StorageAlipanAppID:        lookup("MOVIEPILOT_STORAGE_ALIPAN_APP_ID", "ALIPAN_APP_ID"),
+		StorageAlipanAccessToken:  lookup("MOVIEPILOT_STORAGE_ALIPAN_ACCESS_TOKEN"),
+		StorageAlipanRefreshToken: lookup("MOVIEPILOT_STORAGE_ALIPAN_REFRESH_TOKEN"),
+		StorageAlipanDriveID:      lookup("MOVIEPILOT_STORAGE_ALIPAN_DRIVE_ID"),
+		StorageU115AppID:          lookup("MOVIEPILOT_STORAGE_U115_APP_ID", "U115_APP_ID"),
+		StorageU115AuthServer:     lookup("MOVIEPILOT_STORAGE_U115_AUTH_SERVER", "U115_AUTH_SERVER"),
+		StorageU115AccessToken:    lookup("MOVIEPILOT_STORAGE_U115_ACCESS_TOKEN"),
+		StorageU115RefreshToken:   lookup("MOVIEPILOT_STORAGE_U115_REFRESH_TOKEN"),
+
+		OpenSubtitlesAPIKey: lookup("MOVIEPILOT_OPENSUBTITLES_API_KEY", "OPENSUBTITLES_API_KEY"),
+		OpenSubtitlesToken:  lookup("MOVIEPILOT_OPENSUBTITLES_TOKEN", "OPENSUBTITLES_TOKEN"),
+		AssrtToken:          lookup("MOVIEPILOT_ASSRT_TOKEN", "ASSRT_TOKEN"),
+		SubtitleLanguages:   parseCSV(defaultString(lookup("MOVIEPILOT_SUBTITLE_LANGS", "SUBTITLE_LANGS"), defaultSubtitleLanguages)),
 
 		VAPIDPrivateKey:  lookup("MOVIEPILOT_VAPID_PRIVATE_KEY"),
 		VAPIDPublicKey:   lookup("MOVIEPILOT_VAPID_PUBLIC_KEY"),
@@ -306,6 +348,9 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 	if err := parseIntField(lookup("MOVIEPILOT_METADATA_WORKERS"), &cfg.MetadataWorkers, "MOVIEPILOT_METADATA_WORKERS"); err != nil {
+		return Config{}, err
+	}
+	if err := parseIntField(lookup("MOVIEPILOT_STORAGE_SMB_PORT"), &cfg.StorageSMBPort, "MOVIEPILOT_STORAGE_SMB_PORT"); err != nil {
 		return Config{}, err
 	}
 	if err := parseDurationField(lookup("MOVIEPILOT_METADATA_TIMEOUT"), &cfg.MetadataTimeout, "MOVIEPILOT_METADATA_TIMEOUT"); err != nil {

@@ -33,6 +33,7 @@ import (
 	"github.com/moviepilot-go/moviepilot-go/internal/pluginengine"
 	"github.com/moviepilot-go/moviepilot-go/internal/storage"
 	"github.com/moviepilot-go/moviepilot-go/internal/subscription"
+	"github.com/moviepilot-go/moviepilot-go/internal/subtitle"
 )
 
 const (
@@ -101,6 +102,7 @@ type Dependencies struct {
 	Scraper                     ManualScraper
 	MediaServerRefresher        MediaServerRefresher
 	TorrentCache                torrentCacheStore
+	Subtitle                    *subtitle.Coordinator
 	// Plugins 是原生插件注册表；为 nil 表示本部署不启用插件体系，
 	// 此时插件路由返回空列表/明确失败，而不是 panic。
 	Plugins *pluginengine.Registry
