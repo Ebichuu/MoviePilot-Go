@@ -104,6 +104,8 @@ type Dependencies struct {
 	TorrentCache                torrentCacheStore
 	Subtitle                    *subtitle.Coordinator
 	TransferTracker             *TransferTracker
+	Versions                    *VersionFetcher
+	PasskeyChallenges           *PasskeyChallengeStore
 	// Plugins 是原生插件注册表；为 nil 表示本部署不启用插件体系，
 	// 此时插件路由返回空列表/明确失败，而不是 panic。
 	Plugins *pluginengine.Registry
@@ -145,6 +147,9 @@ type SubscriptionHistoryStore interface {
 func NewRouter(deps Dependencies) http.Handler {
 	if deps.TransferTracker == nil {
 		deps.TransferTracker = NewTransferTracker()
+	}
+	if deps.PasskeyChallenges == nil {
+		deps.PasskeyChallenges = NewPasskeyChallengeStore()
 	}
 	registerer := prometheus.NewRegistry()
 	registerer.MustRegister(prometheus.NewGoCollector(), prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))

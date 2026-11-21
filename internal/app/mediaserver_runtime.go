@@ -326,6 +326,37 @@ func (r *mediaServerRuntime) ListMediaServerLibraries(
 	entries := r.entriesSnapshot(selector)
 	result := make([]httpapi.MediaServerLibrary, 0)
 	for _, entry := range entries {
+		if php, isPlex := entry.client.(plexHomepageClient); isPlex {
+			plexLibs, err := php.ListPlexLibraries(ctx)
+			if err != nil {
+				if r.logger != nil {
+					r.logger.Warn("读取媒体服务器媒体库失败",
+						"server", entry.setting.Name, "type", entry.setting.Type, "error", err)
+				}
+				return nil, errors.New("媒体服务器请求失败")
+			}
+			for _, library := range plexLibs {
+				if hidden && !libraryAllowedBySyncConfig(entry.setting.SyncLibraries, library.Key) {
+					continue
+				}
+				locs := append([]string(nil), library.Locations...)
+				item := httpapi.MediaServerLibrary{
+					ID:         library.Key,
+					ItemID:     library.Key,
+					Name:       library.Title,
+					Server:     entry.setting.Name,
+					Type:       entry.setting.Type,
+					ServerType: entry.setting.Type,
+					Collection: plexCollectionType(library.Type),
+					Path:       locs,
+					Locations:  locs,
+					Image:      php.ImageURL(library.Composite),
+					Link:       php.LibraryURL(library.Key),
+				}
+				result = append(result, item)
+			}
+			continue
+		}
 		libraries, err := entry.client.ListLibraries(ctx)
 		if err != nil {
 			if r.logger != nil {

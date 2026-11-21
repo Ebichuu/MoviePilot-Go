@@ -22,6 +22,7 @@ type Library struct {
 	Title     string
 	Type      string // "movie" | "show" | ...
 	Locations []string
+	Composite string // 分区拼图路径（如 /library/sections/1/composite/1700000000）
 }
 
 // Item 表示 Plex 中的影片、剧集或单集条目。

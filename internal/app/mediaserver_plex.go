@@ -201,6 +201,26 @@ func (a *plexMediaServerAdapter) RefreshAll(ctx context.Context) error {
 	return a.client.RefreshAll(ctx)
 }
 
+func (a *plexMediaServerAdapter) ListPlexLibraries(ctx context.Context) ([]plex.Library, error) {
+	return a.client.ListLibraries(ctx)
+}
+
+func (a *plexMediaServerAdapter) ListContinueWatching(ctx context.Context, sectionIDs []string, limit int) ([]plex.PlayItem, error) {
+	return a.client.ListContinueWatching(ctx, sectionIDs, limit)
+}
+
+func (a *plexMediaServerAdapter) ListRecentlyAdded(ctx context.Context, sectionIDs []string, limit int) ([]plex.PlayItem, error) {
+	return a.client.ListRecentlyAdded(ctx, sectionIDs, limit)
+}
+
+func (a *plexMediaServerAdapter) ImageURL(imgPath string) string {
+	return a.client.ImageURL(imgPath)
+}
+
+func (a *plexMediaServerAdapter) LibraryURL(sectionKey string) string {
+	return a.client.LibraryURL(sectionKey)
+}
+
 func plexCollectionType(libType string) string {
 	switch strings.ToLower(strings.TrimSpace(libType)) {
 	case "movie":

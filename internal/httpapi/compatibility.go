@@ -28,7 +28,8 @@ type UserConfigStore interface {
 }
 
 func (d Dependencies) registerPublicCompatibility(router chi.Router) {
-	router.Post("/mfa/passkey/authenticate/start", passkeyAuthenticationUnavailable)
+	router.Post("/mfa/passkey/authenticate/start", d.passkeyAuthenticateStart)
+	router.Post("/mfa/passkey/authenticate/finish", d.passkeyAuthenticateFinish)
 	router.With(authenticateResource(d.Auth)).Get("/system/message", d.systemMessage)
 	// V2 的 `*2` 系列是同一批只读接口的 API_TOKEN 版本，供外部脚本免登录调用，
 	// 因此必须注册在鉴权分组之外，只由 requireAPIToken 校验 ?token=。
@@ -91,7 +92,7 @@ func (d Dependencies) registerProtectedCompatibility(router chi.Router) {
 	router.With(d.requireAdmin).Get("/dashboard/events", d.dashboardEventStatistics)
 	router.With(d.requireAdmin).Get("/dashboard/storage", d.dashboardStorage)
 	router.With(d.requireAdmin).Get("/dashboard/system", d.dashboardSystemInfo)
-	router.With(d.requireAdmin).Get("/dashboard/processes", emptyList)
+	router.With(d.requireAdmin).Get("/dashboard/processes", d.dashboardProcesses)
 	router.With(d.requireAdmin).Get("/dashboard/network", d.dashboardNetwork)
 	router.With(d.requireAdmin).Get("/dashboard/transfer", d.dashboardTransfer)
 	router.With(d.requireAdmin).Get("/dashboard/schedule/{job_id}/progress", dashboardScheduleProgress)
@@ -200,11 +201,10 @@ func (d Dependencies) registerProtectedCompatibility(router chi.Router) {
 	router.Get("/douban/person/{person_id}", d.doubanPerson)
 	router.Get("/douban/person/credits/{person_id}", d.doubanPersonCredits)
 	router.Get("/douban/recommend/{doubanid}/{type_name}", d.doubanRecommend)
-	router.Get("/mfa/passkey/list", refusal("未启用 Passkey"))
-	router.Post("/mfa/passkey/register/start", refusal("未启用 Passkey"))
-	router.Post("/mfa/passkey/register/finish", refusal("未启用 Passkey"))
-	router.Post("/mfa/passkey/authenticate/finish", refusal("未启用 Passkey"))
-	router.Post("/mfa/passkey/delete", refusal("未启用 Passkey"))
+	router.Get("/mfa/passkey/list", d.passkeyList)
+	router.Post("/mfa/passkey/register/start", d.passkeyRegisterStart)
+	router.Post("/mfa/passkey/register/finish", d.passkeyRegisterFinish)
+	router.Post("/mfa/passkey/delete", d.passkeyDelete)
 	router.With(d.requireAdmin).Get("/openai/v1/models", refusal(messageNoLLM))
 	router.With(d.requireAdmin).Post("/openai/v1/chat/completions", refusal(messageNoLLM))
 	router.With(d.requireAdmin).Post("/openai/v1/responses", refusal(messageNoLLM))
@@ -249,7 +249,7 @@ func (d Dependencies) registerProtectedCompatibility(router chi.Router) {
 	router.Delete("/history/download", deleteDownloadHistory)
 	router.Get("/system/setting/public/{key}", d.publicSetting)
 	router.Get("/system/global/user", d.systemGlobalUser)
-	router.With(d.requireAdmin).Get("/system/versions", systemVersions)
+	router.With(d.requireAdmin).Get("/system/versions", d.systemVersionsHandler)
 	// 扩展接口（V2 没有）：PostgreSQL 没法"拷个文件就走"，所以补上整库导出/恢复，
 	// 否则升级、迁移、出事回滚都没有退路。
 	router.With(d.requireAdmin).Get("/system/backup", d.systemBackup)

@@ -73,6 +73,22 @@ func (s *Service) Authenticate(ctx context.Context, username, password string) (
 	return user, nil
 }
 
+// UserByName 通过用户名查询用户信息（用于 Passkey 等无密码登录流程）。
+func (s *Service) UserByName(ctx context.Context, username string) (User, error) {
+	if s == nil || s.store == nil {
+		return User{}, errors.New("用户存储不可用")
+	}
+	return s.store.UserByName(ctx, strings.TrimSpace(username))
+}
+
+// UserByID 通过用户 ID 查询用户信息。
+func (s *Service) UserByID(ctx context.Context, id int64) (User, error) {
+	if s == nil || s.store == nil {
+		return User{}, errors.New("用户存储不可用")
+	}
+	return s.store.UserByID(ctx, id)
+}
+
 // AccessToken 为已认证用户签发 HS256 Bearer Token。
 func (s *Service) AccessToken(user User) (string, error) {
 	return s.sign(user, "authentication", s.jwtSecret, s.tokenLifetime)

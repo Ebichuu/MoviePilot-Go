@@ -161,10 +161,11 @@ func (c *Client) ListLibraries(ctx context.Context) ([]Library, error) {
 		MediaContainer struct {
 			MachineIdentifier string `json:"machineIdentifier"`
 			Directory         []struct {
-				Key      string `json:"key"`
-				Title    string `json:"title"`
-				Type     string `json:"type"`
-				Location []struct {
+				Key       string `json:"key"`
+				Title     string `json:"title"`
+				Type      string `json:"type"`
+				Composite string `json:"composite"`
+				Location  []struct {
 					Path string `json:"path"`
 				} `json:"Location"`
 			} `json:"Directory"`
@@ -191,6 +192,7 @@ func (c *Client) ListLibraries(ctx context.Context) ([]Library, error) {
 			Title:     strings.TrimSpace(dir.Title),
 			Type:      strings.ToLower(strings.TrimSpace(dir.Type)),
 			Locations: locs,
+			Composite: strings.TrimSpace(dir.Composite),
 		})
 	}
 	return libraries, nil

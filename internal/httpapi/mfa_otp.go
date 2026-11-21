@@ -108,9 +108,15 @@ func (d Dependencies) mfaStatus(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, Response{Success: false, Message: "读取 MFA 状态失败"})
 		return
 	}
+	passkeys, err := d.loadUserPasskeys(r.Context(), username)
+	if err != nil {
+		writeJSON(w, http.StatusOK, Response{Success: false, Message: "读取 MFA 状态失败"})
+		return
+	}
+	passkeyCount := len(passkeys.Keys)
 	writeJSON(w, http.StatusOK, Response{Success: true, Data: map[string]any{
 		"otp":     map[string]any{"enabled": found && record.Enabled},
-		"passkey": map[string]any{"enabled": false, "count": 0},
+		"passkey": map[string]any{"enabled": passkeyCount > 0, "count": passkeyCount},
 	}})
 }
 

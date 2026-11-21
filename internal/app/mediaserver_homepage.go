@@ -10,6 +10,7 @@ import (
 
 	"github.com/moviepilot-go/moviepilot-go/internal/httpapi"
 	"github.com/moviepilot-go/moviepilot-go/internal/mediaserver/emby"
+	"github.com/moviepilot-go/moviepilot-go/internal/mediaserver/plex"
 )
 
 // embyHomepageClient 抽象 Emby/Jellyfin 首页最近入库与继续观看接口。
@@ -20,6 +21,16 @@ type embyHomepageClient interface {
 	BackdropImageURL(itemID, imageTag string) string
 	PlayURLWithServer(itemID, serverID string) (string, error)
 	LibraryURL(libraryID, serverID string) string
+}
+
+// plexHomepageClient 抽象 Plex 首页最近入库、继续观看与媒体库跳转/图片接口。
+type plexHomepageClient interface {
+	ListPlexLibraries(ctx context.Context) ([]plex.Library, error)
+	ListContinueWatching(ctx context.Context, sectionIDs []string, limit int) ([]plex.PlayItem, error)
+	ListRecentlyAdded(ctx context.Context, sectionIDs []string, limit int) ([]plex.PlayItem, error)
+	ImageURL(imgPath string) string
+	LibraryURL(sectionKey string) string
+	PlayURL(itemID string) (string, error)
 }
 
 // ListMediaServerLatest 复刻 V2 Emby `get_latest`：查询 `/Users/{user}/Items/Latest`，
@@ -43,6 +54,18 @@ func (r *mediaServerRuntime) ListMediaServerLatest(
 	for _, entry := range entries {
 		if len(result) >= count {
 			break
+		}
+		if php, ok := entry.client.(plexHomepageClient); ok {
+			items, err := r.listPlexLatest(ctx, entry, php, count-len(result))
+			if err != nil {
+				if r.logger != nil {
+					r.logger.Warn("读取 Plex 最近入库失败",
+						"server", entry.setting.Name, "type", entry.setting.Type, "error", err)
+				}
+				return nil, errors.New("媒体服务器请求失败")
+			}
+			result = append(result, items...)
+			continue
 		}
 		hp, ok := entry.client.(embyHomepageClient)
 		if !ok {
@@ -120,6 +143,18 @@ func (r *mediaServerRuntime) ListMediaServerPlaying(
 	for _, entry := range entries {
 		if len(result) >= count {
 			break
+		}
+		if php, ok := entry.client.(plexHomepageClient); ok {
+			items, err := r.listPlexPlaying(ctx, entry, php, count-len(result))
+			if err != nil {
+				if r.logger != nil {
+					r.logger.Warn("读取 Plex 继续观看失败",
+						"server", entry.setting.Name, "type", entry.setting.Type, "error", err)
+				}
+				return nil, errors.New("媒体服务器请求失败")
+			}
+			result = append(result, items...)
+			continue
 		}
 		hp, ok := entry.client.(embyHomepageClient)
 		if !ok {
@@ -262,4 +297,171 @@ func libraryAllowedBySyncConfig(syncLibraries []string, libraryID string) bool {
 		return true
 	}
 	return slices.Contains(syncLibraries, strings.TrimSpace(libraryID))
+}
+
+func plexAllowedSectionIDs(ctx context.Context, entry *mediaServerEntry, php plexHomepageClient) ([]string, error) {
+	libs, err := php.ListPlexLibraries(ctx)
+	if err != nil {
+		return nil, err
+	}
+	ids := make([]string, 0, len(libs))
+	for _, lib := range libs {
+		if lib.Type != "movie" && lib.Type != "show" {
+			continue
+		}
+		if !libraryAllowedBySyncConfig(entry.setting.SyncLibraries, lib.Key) {
+			continue
+		}
+		if lib.Key != "" {
+			ids = append(ids, lib.Key)
+		}
+	}
+	return ids, nil
+}
+
+func (r *mediaServerRuntime) listPlexLatest(
+	ctx context.Context,
+	entry *mediaServerEntry,
+	php plexHomepageClient,
+	limit int,
+) ([]httpapi.MediaServerPlayItem, error) {
+	sectionIDs, err := plexAllowedSectionIDs(ctx, entry, php)
+	if err != nil {
+		return nil, err
+	}
+	if len(sectionIDs) == 0 {
+		return nil, nil
+	}
+	rawItems, err := php.ListRecentlyAdded(ctx, sectionIDs, limit)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]httpapi.MediaServerPlayItem, 0, len(rawItems))
+	for _, item := range rawItems {
+		if len(out) >= limit {
+			break
+		}
+		var mediaType, title, image string
+		switch item.Type {
+		case "movie":
+			mediaType = "电影"
+			title = item.Title
+			image = php.ImageURL(item.Thumb)
+		case "season":
+			mediaType = "电视剧"
+			idx := 0
+			if item.Index != nil {
+				idx = *item.Index
+			}
+			title = fmt.Sprintf("%s 第%d季", item.ParentTitle, idx)
+			image = php.ImageURL(item.Thumb)
+		case "episode":
+			mediaType = "电视剧"
+			season, ep := 0, 0
+			if item.ParentIndex != nil {
+				season = *item.ParentIndex
+			}
+			if item.Index != nil {
+				ep = *item.Index
+			}
+			title = fmt.Sprintf("%s 第%d季 第%d集", item.GrandparentTitle, season, ep)
+			thumb := firstNonEmptyString(item.ParentThumb, item.GrandparentThumb, item.Thumb)
+			image = php.ImageURL(thumb)
+		case "show":
+			mediaType = "电视剧"
+			title = fmt.Sprintf("%s 共%d季", item.Title, item.ChildCount)
+			image = php.ImageURL(item.Thumb)
+		default:
+			continue
+		}
+		subtitle := ""
+		if item.Year > 0 {
+			subtitle = strconv.Itoa(item.Year)
+		}
+		link, _ := php.PlayURL(item.Key)
+		id := firstNonEmptyString(item.Key, item.RatingKey)
+		out = append(out, httpapi.MediaServerPlayItem{
+			ID:         id,
+			ItemID:     firstNonEmptyString(item.RatingKey, item.Key),
+			Title:      title,
+			Subtitle:   subtitle,
+			Type:       mediaType,
+			Image:      image,
+			Link:       link,
+			URL:        link,
+			ServerType: entry.setting.Type,
+		})
+	}
+	return out, nil
+}
+
+func (r *mediaServerRuntime) listPlexPlaying(
+	ctx context.Context,
+	entry *mediaServerEntry,
+	php plexHomepageClient,
+	limit int,
+) ([]httpapi.MediaServerPlayItem, error) {
+	sectionIDs, err := plexAllowedSectionIDs(ctx, entry, php)
+	if err != nil {
+		return nil, err
+	}
+	if len(sectionIDs) == 0 {
+		return nil, nil
+	}
+	rawItems, err := php.ListContinueWatching(ctx, sectionIDs, limit)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]httpapi.MediaServerPlayItem, 0, len(rawItems))
+	for _, item := range rawItems {
+		if len(out) >= limit {
+			break
+		}
+		var mediaType, title, subtitle string
+		if item.Type == "movie" {
+			mediaType = "电影"
+			title = item.Title
+			if item.Year > 0 {
+				subtitle = strconv.Itoa(item.Year)
+			}
+		} else {
+			mediaType = "电视剧"
+			title = firstNonEmptyString(item.GrandparentTitle, item.Title)
+			if item.ParentIndex != nil && item.Index != nil {
+				subtitle = fmt.Sprintf("S%d:E%d - %s", *item.ParentIndex, *item.Index, item.Title)
+			} else {
+				subtitle = item.Title
+			}
+		}
+		link, _ := php.PlayURL(item.Key)
+		image := php.ImageURL(firstNonEmptyString(item.Art, item.Thumb))
+		pctVal := 0.0
+		if item.ViewOffset > 0 && item.Duration > 0 {
+			pctVal = float64(item.ViewOffset) / float64(item.Duration) * 100
+		}
+		pct := pctVal
+		id := firstNonEmptyString(item.Key, item.RatingKey)
+		out = append(out, httpapi.MediaServerPlayItem{
+			ID:         id,
+			ItemID:     firstNonEmptyString(item.RatingKey, item.Key),
+			Title:      title,
+			Subtitle:   subtitle,
+			Type:       mediaType,
+			Image:      image,
+			Link:       link,
+			URL:        link,
+			Percent:    &pct,
+			ServerType: entry.setting.Type,
+		})
+	}
+	return out, nil
+}
+
+func firstNonEmptyString(values ...string) string {
+	for _, v := range values {
+		if trimmed := strings.TrimSpace(v); trimmed != "" {
+			return trimmed
+		}
+	}
+	return ""
 }
