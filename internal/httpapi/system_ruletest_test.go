@@ -208,3 +208,22 @@ func TestMediaServerPlaybackResolution(t *testing.T) {
 		t.Fatalf("响应不应包含错误字段: %s", recorder.Body.String())
 	}
 }
+
+func TestSystemRuleTestBuiltinBestVersionPreset(t *testing.T) {
+	rec := httptest.NewRecorder()
+	Dependencies{}.systemRuleTest(rec, httptest.NewRequest(
+		http.MethodGet,
+		"/system/ruletest?title=Dune.2021.2160p.UHD.BluRay.REMUX.HEVC&subtitle=%E4%B8%AD%E5%AD%97&rulegroup_name=%E5%86%85%E7%BD%AE%E6%B4%97%E7%89%88",
+		nil,
+	))
+	var resp struct {
+		Success bool           `json:"success"`
+		Data    map[string]any `json:"data"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("unmarshal: %v body=%s", err, rec.Body.String())
+	}
+	if !resp.Success || resp.Data["matched"] != true || resp.Data["priority"] != float64(2) || resp.Data["pri_order"] != float64(99) || resp.Data["will_complete_best_version"] != false {
+		t.Fatalf("unexpected builtin wash ruletest response: %+v", resp)
+	}
+}

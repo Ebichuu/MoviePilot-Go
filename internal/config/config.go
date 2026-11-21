@@ -47,6 +47,9 @@ const (
 	defaultDoubanBaseURL       = "https://frodo.douban.com/api/v2"
 	defaultBangumiBaseURL      = "https://api.bgm.tv"
 	defaultAniListEndpoint     = "https://graphql.anilist.co"
+	defaultTVDBBaseURL         = "https://api4.thetvdb.com/v4"
+	defaultFanartBaseURL       = "https://webservice.fanart.tv/v3"
+	defaultFanartLanguages     = "zh,en"
 	defaultSubscribeRSS        = 30 * time.Minute
 	defaultCookieCloudHost     = "https://movie-pilot.org/cookiecloud"
 	defaultCookieCloudInterval = 24 * time.Hour
@@ -113,6 +116,13 @@ type Config struct {
 	BangumiBaseURL  string
 	BangumiToken    string
 	AniListEndpoint string
+	TVDBBaseURL     string
+	TVDBAPIKey      string
+	TVDBAPIPin      string
+	FanartBaseURL   string
+	FanartEnable    bool
+	FanartAPIKey    string
+	FanartLanguages []string
 
 	SubscribeRSSInterval time.Duration
 	SiteMessage          bool
@@ -251,6 +261,13 @@ func Load() (Config, error) {
 		BangumiBaseURL:  defaultString(lookup("MOVIEPILOT_BANGUMI_BASE_URL"), defaultBangumiBaseURL),
 		BangumiToken:    lookup("MOVIEPILOT_BANGUMI_TOKEN"),
 		AniListEndpoint: defaultString(lookup("MOVIEPILOT_ANILIST_ENDPOINT"), defaultAniListEndpoint),
+		TVDBBaseURL:     defaultString(lookup("MOVIEPILOT_TVDB_BASE_URL"), defaultTVDBBaseURL),
+		TVDBAPIKey:      lookup("MOVIEPILOT_TVDB_API_KEY", "TVDB_V4_API_KEY"),
+		TVDBAPIPin:      lookup("MOVIEPILOT_TVDB_API_PIN", "TVDB_V4_API_PIN"),
+		FanartBaseURL:   defaultString(lookup("MOVIEPILOT_FANART_BASE_URL"), defaultFanartBaseURL),
+		FanartEnable:    parseBoolDefault(lookup("MOVIEPILOT_FANART_ENABLE", "FANART_ENABLE"), true),
+		FanartAPIKey:    lookup("MOVIEPILOT_FANART_API_KEY", "FANART_API_KEY"),
+		FanartLanguages: parseCSV(defaultString(lookup("MOVIEPILOT_FANART_LANG", "FANART_LANG"), defaultFanartLanguages)),
 
 		SubscribeRSSInterval: defaultSubscribeRSS,
 		SiteMessage:          parseBoolDefault(lookup("SITE_MESSAGE", "MOVIEPILOT_SITE_MESSAGE"), false),

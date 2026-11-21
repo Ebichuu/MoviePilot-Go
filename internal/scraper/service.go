@@ -42,6 +42,11 @@ type MovieDetails struct {
 	Cast          []CastMember
 	PosterURL     string
 	BackdropURL   string
+	LogoURL       string
+	ClearArtURL   string
+	BannerURL     string
+	ThumbURL      string
+	DiscURL       string
 	TMDBID        int
 	IMDBID        string
 }
@@ -59,6 +64,10 @@ type TVShowDetails struct {
 	Cast          []CastMember
 	PosterURL     string
 	BackdropURL   string
+	LogoURL       string
+	ClearArtURL   string
+	BannerURL     string
+	ThumbURL      string
 	TMDBID        int
 	IMDBID        string
 	TVDBID        int
@@ -115,10 +124,15 @@ func (s *ScraperService) ScrapeMovieImages(ctx context.Context, tmdbID int, medi
 	return s.writeImages(ctx, mediaPath, map[string]string{
 		"poster":   details.PosterURL,
 		"backdrop": details.BackdropURL,
+		"logo":     details.LogoURL,
+		"clearart": details.ClearArtURL,
+		"banner":   details.BannerURL,
+		"thumb":    details.ThumbURL,
+		"disc":     details.DiscURL,
 	})
 }
 
-// ScrapeTVShowImages 复刻 V2 电视剧图片刮削：写入 poster/backdrop。
+// ScrapeTVShowImages 复刻 V2 电视剧图片刮削：写入 poster/backdrop 以及可选的 Fanart 高清艺术图。
 func (s *ScraperService) ScrapeTVShowImages(ctx context.Context, tmdbID int, mediaPath string) error {
 	if s.provider == nil {
 		return fmt.Errorf("metadata provider is not configured")
@@ -130,6 +144,10 @@ func (s *ScraperService) ScrapeTVShowImages(ctx context.Context, tmdbID int, med
 	return s.writeImages(ctx, mediaPath, map[string]string{
 		"poster":   details.PosterURL,
 		"backdrop": details.BackdropURL,
+		"logo":     details.LogoURL,
+		"clearart": details.ClearArtURL,
+		"banner":   details.BannerURL,
+		"thumb":    details.ThumbURL,
 	})
 }
 

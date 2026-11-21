@@ -50,6 +50,8 @@ type v2FilterRule struct {
 	seeders              string
 	publishTime          string
 	downloadVolumeFactor *float64
+	minUploadFactor      *float64
+	requireHitAndRun     bool
 	originalLanguages    []string
 }
 
@@ -247,6 +249,17 @@ func (e *v2FilterEvaluator) match(ruleID string, candidate Candidate) (bool, err
 			return false, nil
 		}
 	}
+	if definition.minUploadFactor != nil {
+		if candidate.Resource.UploadVolumeFactor == nil ||
+			*candidate.Resource.UploadVolumeFactor < *definition.minUploadFactor {
+			return false, nil
+		}
+	}
+	if definition.requireHitAndRun {
+		if !candidate.Resource.HitAndRun {
+			return false, nil
+		}
+	}
 	if definition.publishTime != "" {
 		matched, err := matchV2PublishTime(definition.publishTime, candidate.Resource.PublishedAt, e.now)
 		if err != nil || !matched {
@@ -395,6 +408,15 @@ var v2BuiltinFilterRules = map[string]v2FilterRule{
 	"REMUX":   {include: []string{`REMUX`}},
 	"WEBDL":   {include: []string{`WEB-?DL|WEB-?RIP`}},
 	"FREE":    {downloadVolumeFactor: float64Pointer(0)},
+	"2XFREE":  {downloadVolumeFactor: float64Pointer(0), minUploadFactor: float64Pointer(2)},
+	"H50":     {downloadVolumeFactor: float64Pointer(0.5)},
+	"H30":     {downloadVolumeFactor: float64Pointer(0.3)},
+	"HR":      {requireHitAndRun: true},
+	"AV1":     {include: []string{`\bAV1\b`}},
+	"DV":      {include: []string{`Dolby[\s.]+Vision|DOVI|[\s.]+DV[\s.]+|杜比视界`}},
+	"HDR10P":  {include: []string{`HDR10\+|HDR10Plus`}},
+	"WEB":     {include: []string{`WEB-?DL|WEB-?RIP`}},
+	"IMAX":    {include: []string{`\bIMAX\b`}},
 	"CNVOI":   {include: []string{`[国國][语語]配音|[国國]配|[国國][语語]`}, originalLanguages: []string{"zh"}},
 	"HKVOI":   {include: []string{`粤语配音|粤语`}},
 	"60FPS":   {include: []string{`60fps|60帧`}},

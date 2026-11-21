@@ -121,11 +121,17 @@ func Run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
 		return fmt.Errorf("初始化元数据协调器: %w", err)
 	}
 
-	// Build NFO scraper service if TMDB is configured.
+	// Build NFO scraper service if TMDB is configured, optionally enriched with TheTVDB v4 & Fanart.tv v3.
 	var scraperService *scraper.ScraperService
 	if cfg.TMDBToken != "" {
 		tmdbClient := metadata.NewTMDB(metadataHTTP, cfg.TMDBBaseURL, cfg.TMDBToken)
 		tmdbAdapter := metadata.NewTMDBScraperAdapter(tmdbClient)
+		if cfg.TVDBAPIKey != "" {
+			tmdbAdapter.SetTVDB(metadata.NewTVDB(metadataHTTP, cfg.TVDBBaseURL, cfg.TVDBAPIKey, cfg.TVDBAPIPin))
+		}
+		if cfg.FanartEnable && cfg.FanartAPIKey != "" {
+			tmdbAdapter.SetFanart(metadata.NewFanart(metadataHTTP, cfg.FanartBaseURL, cfg.FanartAPIKey, cfg.FanartLanguages))
+		}
 		nfoWriter := scraper.NewNFOWriter()
 		scraperService = scraper.NewScraperService(tmdbAdapter, nfoWriter, logger)
 	}
@@ -692,12 +698,15 @@ func newDoubanClient(cfg config.Config, client *metadata.HTTPClient) *metadata.D
 // metadataProviders 组装识别层的数据源顺序：TMDB、豆瓣在前，Bangumi / AniList 兜底。
 // 建协调器与运行期热替换（ReloadMetadata）共用，避免两条路径的排序/取舍漂移。
 func metadataProviders(cfg config.Config, client *metadata.HTTPClient) []metadata.Provider {
-	providers := make([]metadata.Provider, 0, 4)
+	providers := make([]metadata.Provider, 0, 5)
 	if tmdb := newTMDBClient(cfg, client); tmdb != nil {
 		providers = append(providers, tmdb)
 	}
 	if douban := newDoubanClient(cfg, client); douban != nil {
 		providers = append(providers, douban)
+	}
+	if cfg.TVDBAPIKey != "" {
+		providers = append(providers, metadata.NewTVDB(client, cfg.TVDBBaseURL, cfg.TVDBAPIKey, cfg.TVDBAPIPin))
 	}
 	return append(providers,
 		metadata.NewBangumi(client, cfg.BangumiBaseURL, cfg.BangumiToken),

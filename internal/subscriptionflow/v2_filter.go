@@ -66,6 +66,13 @@ func (h *Handler) filterV2SubscriptionCandidates(
 		}
 	}
 	if len(requested) == 0 {
+		if subscriptionBestVersionEnabled(target.Config) && hasUnrankedCandidates(candidates) {
+			facts, factsErr := h.v2FilterMediaFacts(ctx, target)
+			if factsErr != nil {
+				return nil, factsErr
+			}
+			candidates = subscription.ScoreDefaultBestVersionCandidates(candidates, facts, time.Now())
+		}
 		return filterMovieUpgradeCandidates(target, candidates)
 	}
 
@@ -115,6 +122,15 @@ func (h *Handler) v2FilterMediaFacts(
 		facts.Category = metadata.V2Category(target.MediaType, detail)
 	}
 	return facts, nil
+}
+
+func hasUnrankedCandidates(candidates []subscription.Candidate) bool {
+	for _, candidate := range candidates {
+		if candidate.Resource.PriOrder == 0 {
+			return true
+		}
+	}
+	return false
 }
 
 func v2SubscriptionFilterGroupNames(config map[string]any) ([]string, bool, error) {

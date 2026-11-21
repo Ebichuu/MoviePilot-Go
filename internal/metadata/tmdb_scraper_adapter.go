@@ -12,14 +12,30 @@ import (
 	"github.com/moviepilot-go/moviepilot-go/internal/scraper"
 )
 
-// TMDBScraperAdapter 将 TMDB API 适配为 scraper.MetadataProvider 接口。
+// TMDBScraperAdapter 将 TMDB API（及可选的 TheTVDB / Fanart.tv 补全）适配为 scraper.MetadataProvider 接口。
 type TMDBScraperAdapter struct {
-	tmdb *TMDB
+	tmdb   *TMDB
+	tvdb   *TVDB
+	fanart *Fanart
 }
 
 // NewTMDBScraperAdapter 创建 TMDB 刮削适配器。
 func NewTMDBScraperAdapter(tmdb *TMDB) *TMDBScraperAdapter {
 	return &TMDBScraperAdapter{tmdb: tmdb}
+}
+
+// SetTVDB 挂载可选的 TheTVDB v4 客户端，用于补全剧集与单集元数据。
+func (a *TMDBScraperAdapter) SetTVDB(tvdb *TVDB) {
+	if a != nil {
+		a.tvdb = tvdb
+	}
+}
+
+// SetFanart 挂载可选的 Fanart.tv v3 客户端，用于补全 Logo / ClearArt / Banner / Thumb / Disc / 季海报。
+func (a *TMDBScraperAdapter) SetFanart(fanart *Fanart) {
+	if a != nil {
+		a.fanart = fanart
+	}
 }
 
 // GetMovieDetails 获取电影详细信息，包括演员、导演、编剧。
@@ -133,7 +149,7 @@ func (a *TMDBScraperAdapter) GetMovieDetails(ctx context.Context, tmdbID int) (*
 		}
 	}
 
-	return &scraper.MovieDetails{
+	details := &scraper.MovieDetails{
 		Title:         response.Title,
 		OriginalTitle: response.OriginalTitle,
 		Year:          yearFromDate(response.ReleaseDate),
@@ -150,7 +166,23 @@ func (a *TMDBScraperAdapter) GetMovieDetails(ctx context.Context, tmdbID int) (*
 		BackdropURL:   tmdbOriginalImage(backdropPath),
 		TMDBID:        response.ID,
 		IMDBID:        response.ImdbID,
-	}, nil
+	}
+	if a.fanart != nil {
+		if fanartImgs, fanartErr := a.fanart.GetMovieImages(ctx, tmdbID); fanartErr == nil && fanartImgs != nil {
+			if details.PosterURL == "" {
+				details.PosterURL = fanartImgs.PosterURL
+			}
+			if details.BackdropURL == "" {
+				details.BackdropURL = fanartImgs.BackdropURL
+			}
+			details.LogoURL = fanartImgs.LogoURL
+			details.ClearArtURL = fanartImgs.ClearArtURL
+			details.BannerURL = fanartImgs.BannerURL
+			details.ThumbURL = fanartImgs.ThumbURL
+			details.DiscURL = fanartImgs.DiscURL
+		}
+	}
+	return details, nil
 }
 
 // GetTVShowDetails 获取剧集详细信息。
@@ -241,7 +273,7 @@ func (a *TMDBScraperAdapter) GetTVShowDetails(ctx context.Context, tmdbID int) (
 		}
 	}
 
-	return &scraper.TVShowDetails{
+	details := &scraper.TVShowDetails{
 		Title:         response.Name,
 		OriginalTitle: response.OriginalName,
 		Year:          yearFromDate(response.FirstAirDate),
@@ -256,7 +288,44 @@ func (a *TMDBScraperAdapter) GetTVShowDetails(ctx context.Context, tmdbID int) (
 		TMDBID:        response.ID,
 		IMDBID:        response.ExternalIDs.ImdbID,
 		TVDBID:        response.ExternalIDs.TvdbID,
-	}, nil
+	}
+	if a.tvdb != nil && details.TVDBID > 0 {
+		if tvdbDetail, tvdbErr := a.tvdb.GetSeriesExtended(ctx, details.TVDBID); tvdbErr == nil && tvdbDetail != nil {
+			if strings.TrimSpace(details.Plot) == "" {
+				details.Plot = tvdbDetail.Overview
+			}
+			if strings.TrimSpace(details.Title) == "" {
+				details.Title = tvdbDetail.Title
+			}
+			if strings.TrimSpace(details.PosterURL) == "" {
+				details.PosterURL = tvdbDetail.PosterURL
+			}
+			if strings.TrimSpace(details.BackdropURL) == "" {
+				details.BackdropURL = tvdbDetail.BackdropURL
+			}
+			if len(details.Genres) == 0 && len(tvdbDetail.Genres) > 0 {
+				details.Genres = append([]string(nil), tvdbDetail.Genres...)
+			}
+			if details.IMDBID == "" {
+				details.IMDBID = tvdbDetail.IMDBID
+			}
+		}
+	}
+	if a.fanart != nil && details.TVDBID > 0 {
+		if fanartImgs, fanartErr := a.fanart.GetTVImages(ctx, details.TVDBID); fanartErr == nil && fanartImgs != nil {
+			if details.PosterURL == "" {
+				details.PosterURL = fanartImgs.PosterURL
+			}
+			if details.BackdropURL == "" {
+				details.BackdropURL = fanartImgs.BackdropURL
+			}
+			details.LogoURL = fanartImgs.LogoURL
+			details.ClearArtURL = fanartImgs.ClearArtURL
+			details.BannerURL = fanartImgs.BannerURL
+			details.ThumbURL = fanartImgs.ThumbURL
+		}
+	}
+	return details, nil
 }
 
 // GetEpisodeDetails 获取单集详细信息。
@@ -341,7 +410,7 @@ func (a *TMDBScraperAdapter) GetEpisodeDetails(ctx context.Context, tmdbID int, 
 		})
 	}
 
-	return &scraper.EpisodeDetails{
+	epDetails := &scraper.EpisodeDetails{
 		Title:      response.Name,
 		Season:     season,
 		Episode:    episode,
@@ -355,10 +424,35 @@ func (a *TMDBScraperAdapter) GetEpisodeDetails(ctx context.Context, tmdbID int, 
 		PosterURL:  tmdbStill(response.StillPath),
 		TMDBID:     response.ID,
 		TVDBID:     response.ExternalIDs.TvdbID,
-	}, nil
+	}
+	if a.tvdb != nil && (strings.TrimSpace(epDetails.Plot) == "" || strings.TrimSpace(epDetails.PosterURL) == "") {
+		if show, showErr := a.GetTVShowDetails(ctx, tmdbID); showErr == nil && show != nil && show.TVDBID > 0 {
+			if tvdbEp, tvdbErr := a.tvdb.GetEpisode(ctx, show.TVDBID, season, episode); tvdbErr == nil && tvdbEp != nil {
+				if strings.TrimSpace(epDetails.Title) == "" {
+					epDetails.Title = tvdbEp.Title
+				}
+				if strings.TrimSpace(epDetails.Plot) == "" {
+					epDetails.Plot = tvdbEp.Overview
+				}
+				if strings.TrimSpace(epDetails.PosterURL) == "" {
+					epDetails.PosterURL = tvdbEp.ImageURL
+				}
+				if epDetails.Runtime == 0 {
+					epDetails.Runtime = tvdbEp.Runtime
+				}
+				if epDetails.EpisodeAir.IsZero() && tvdbEp.AirDate != "" {
+					epDetails.EpisodeAir = parseDateOrZero(tvdbEp.AirDate)
+				}
+				if epDetails.TVDBID == 0 {
+					epDetails.TVDBID = tvdbEp.ID
+				}
+			}
+		}
+	}
+	return epDetails, nil
 }
 
-// GetSeasonPosterURL 获取指定剧季的 TMDB 原图海报 URL。
+// GetSeasonPosterURL 获取指定剧季的 TMDB 原图海报 URL，缺失时回退 Fanart.tv 季海报。
 func (a *TMDBScraperAdapter) GetSeasonPosterURL(ctx context.Context, tmdbID, season int) (string, error) {
 	if a.tmdb == nil || a.tmdb.http == nil {
 		return "", fmt.Errorf("TMDB 客户端未配置")
@@ -373,7 +467,17 @@ func (a *TMDBScraperAdapter) GetSeasonPosterURL(ctx context.Context, tmdbID, sea
 	if err := a.tmdb.http.DoJSON(ctx, http.MethodGet, endpoint, a.tmdb.headers(), nil, &response); err != nil {
 		return "", fmt.Errorf("TMDB 季详情请求失败: %w", err)
 	}
-	return tmdbOriginalImage(response.PosterPath), nil
+	if url := tmdbOriginalImage(response.PosterPath); url != "" {
+		return url, nil
+	}
+	if a.fanart != nil {
+		if show, showErr := a.GetTVShowDetails(ctx, tmdbID); showErr == nil && show != nil && show.TVDBID > 0 {
+			if imgs, imgErr := a.fanart.GetTVImages(ctx, show.TVDBID); imgErr == nil && imgs != nil {
+				return imgs.SeasonPosters[season], nil
+			}
+		}
+	}
+	return "", nil
 }
 
 // tmdbProfile 构建 TMDB 演员头像原图 URL。

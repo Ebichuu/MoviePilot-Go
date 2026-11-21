@@ -13,10 +13,12 @@ import (
 const (
 	// ruleTestGroupsSetting 是用户过滤规则组的持久化键，与订阅流程共用同一份数据。
 	ruleTestGroupsSetting = "UserFilterRuleGroups"
+	// ruleTestCustomRulesSetting 是用户自定义过滤规则的持久化键。
+	ruleTestCustomRulesSetting = "CustomFilterRules"
 )
 
 // systemRuleTest 对应 V2 `GET /system/ruletest?title=&rulegroup_name=&subtitle=`：
-// 用真实过滤引擎验证某个规则组是否会命中给定标题。
+// 用真实过滤引擎（含自定义规则与内置洗版规则）验证规则组是否命中并返回优先级档位。
 func (d Dependencies) systemRuleTest(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	title := strings.TrimSpace(query.Get("title"))
@@ -28,10 +30,16 @@ func (d Dependencies) systemRuleTest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	groups := []subscription.V2FilterRuleGroup{}
+	customRules := []subscription.V2CustomFilterRule{}
 	if d.Store != nil {
 		if _, err := d.Store.GetSetting(r.Context(), ruleTestGroupsSetting, &groups); err != nil {
 			if d.Logger != nil {
 				d.Logger.Warn("读取过滤规则组失败", "request_id", requestID(r.Context()), "error", err)
+			}
+		}
+		if _, err := d.Store.GetSetting(r.Context(), ruleTestCustomRulesSetting, &customRules); err != nil {
+			if d.Logger != nil {
+				d.Logger.Warn("读取自定义过滤规则失败", "request_id", requestID(r.Context()), "error", err)
 			}
 		}
 	}
@@ -47,6 +55,11 @@ func (d Dependencies) systemRuleTest(w http.ResponseWriter, r *http.Request) {
 			matched = &groups[index]
 			break
 		}
+	}
+	if matched == nil && groupName == subscription.DefaultBestVersionRuleGroupName {
+		def := subscription.DefaultBestVersionRuleGroup()
+		matched = &def
+		groups = append(groups, def)
 	}
 	if matched == nil {
 		writeJSON(w, http.StatusOK, Response{
@@ -64,8 +77,8 @@ func (d Dependencies) systemRuleTest(w http.ResponseWriter, r *http.Request) {
 		Resource: indexer.Resource{Title: title, Description: subtitle},
 		Parsed:   parsed,
 	}
-	filtered, err := subscription.FilterV2Candidates(
-		[]subscription.Candidate{candidate}, []string{groupName}, groups, nil,
+	eval, err := subscription.EvaluateBestVersionUpgrade(
+		candidate, nil, groups, []string{groupName}, customRules,
 		subscription.V2FilterMedia{}, time.Now(),
 	)
 	if err != nil {
@@ -74,7 +87,13 @@ func (d Dependencies) systemRuleTest(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	result["matched"] = len(filtered) == 1
+	result["matched"] = eval.Matched
+	if eval.Matched {
+		result["priority"] = eval.Rank
+		result["pri_order"] = eval.PriOrder
+		result["matched_level"] = eval.MatchedLevel
+		result["will_complete_best_version"] = eval.WillComplete
+	}
 	writeJSON(w, http.StatusOK, Response{Success: true, Data: result})
 }
 
