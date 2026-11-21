@@ -608,6 +608,7 @@ func Run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
 		WebPush:                    webPushDispatcherFrom(webPushSender),
 		Storage:                    storageProvider,
 		Subtitle:                   subtitleCoordinator,
+		TransferTracker:            httpapi.NewTransferTracker(),
 	})
 	server := &http.Server{
 		Addr:              cfg.HTTPAddr,

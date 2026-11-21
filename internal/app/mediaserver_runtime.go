@@ -18,6 +18,7 @@ import (
 	"github.com/moviepilot-go/moviepilot-go/internal/mediaindex"
 	"github.com/moviepilot-go/moviepilot-go/internal/mediaserver"
 	"github.com/moviepilot-go/moviepilot-go/internal/mediaserver/emby"
+	"github.com/moviepilot-go/moviepilot-go/internal/mediaserver/plex"
 	"github.com/moviepilot-go/moviepilot-go/internal/organizer"
 )
 
@@ -32,7 +33,7 @@ const (
 
 type mediaServerEntry struct {
 	setting     mediaconfig.Server
-	client      *emby.Client
+	client      mediaServerClient
 	fingerprint string
 
 	userMu       sync.Mutex
@@ -99,22 +100,38 @@ func buildMediaServerRuntime(
 		if !setting.Enabled {
 			continue
 		}
-		if setting.Type != "emby" && setting.Type != "jellyfin" {
+		if setting.Type != "emby" && setting.Type != "jellyfin" && setting.Type != "plex" {
 			return nil, errors.New("媒体服务器类型当前不受支持")
 		}
-		client, err := emby.NewClient(emby.Config{
-			ServerType:    setting.Type,
-			BaseURL:       setting.Config.Host,
-			PlayHost:      setting.Config.PlayHost,
-			Token:         setting.Config.APIKey,
-			Authorization: mediaServerAuthorization(setting.Type, setting.ID, setting.Config.APIKey),
-			Timeout:       timeout,
-		})
-		if err != nil {
-			if setting.Type == "jellyfin" {
-				return nil, errors.New("Jellyfin 运行时配置无效")
+		var client mediaServerClient
+		if setting.Type == "plex" {
+			plexClient, err := plex.NewClient(plex.Config{
+				BaseURL:  setting.Config.Host,
+				PlayHost: setting.Config.PlayHost,
+				Token:    setting.Config.EffectiveToken(),
+				Timeout:  timeout,
+			})
+			if err != nil {
+				return nil, errors.New("Plex 运行时配置无效")
 			}
-			return nil, errors.New("Emby 运行时配置无效")
+			client = &plexMediaServerAdapter{client: plexClient}
+		} else {
+			token := setting.Config.EffectiveToken()
+			embyClient, err := emby.NewClient(emby.Config{
+				ServerType:    setting.Type,
+				BaseURL:       setting.Config.Host,
+				PlayHost:      setting.Config.PlayHost,
+				Token:         token,
+				Authorization: mediaServerAuthorization(setting.Type, setting.ID, token),
+				Timeout:       timeout,
+			})
+			if err != nil {
+				if setting.Type == "jellyfin" {
+					return nil, errors.New("Jellyfin 运行时配置无效")
+				}
+				return nil, errors.New("Emby 运行时配置无效")
+			}
+			client = embyClient
 		}
 		entry := &mediaServerEntry{
 			setting: setting.Clone(), client: client,
@@ -409,14 +426,14 @@ func (r *mediaServerRuntime) entriesSnapshot(selector string) []*mediaServerEntr
 	return result
 }
 
-type mediaIndexEmbyServer struct{ client *emby.Client }
+type mediaIndexEmbyServer struct{ client mediaServerClient }
 
 func (s mediaIndexEmbyServer) RefreshAll(ctx context.Context) error {
 	if s.client == nil {
 		return mediaindex.ErrServerUnavailable
 	}
 	if err := s.client.RefreshAll(ctx); err != nil {
-		return translateEmbyError(err)
+		return translateMediaServerError(err)
 	}
 	return nil
 }
@@ -430,7 +447,7 @@ func (s mediaIndexEmbyServer) FindItems(ctx context.Context, query mediaindex.Qu
 		Recursive: true, Fields: []string{"Path", "ProviderIds"}, Limit: 2,
 	})
 	if err != nil {
-		return nil, translateEmbyError(err)
+		return nil, translateMediaServerError(err)
 	}
 	items := make([]mediaindex.Item, 0, len(response.Items))
 	for _, item := range response.Items {

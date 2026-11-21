@@ -314,7 +314,7 @@ func TestNormalizeRejectsInvalidSettings(t *testing.T) {
 			other.Name = " emBY "
 			*servers = append(*servers, other)
 		}},
-		{name: "不支持的类型", mutate: func(servers *[]Server) { (*servers)[0].Type = "plex" }},
+		{name: "不支持的类型", mutate: func(servers *[]Server) { (*servers)[0].Type = "unknown" }},
 		{name: "负同步间隔", mutate: func(servers *[]Server) { (*servers)[0].SyncInterval = -1 }},
 		{name: "host 含 userinfo", mutate: func(servers *[]Server) { (*servers)[0].Config.Host = "https://user:pass@emby.example/emby" }},
 		{name: "host 含查询参数", mutate: func(servers *[]Server) { (*servers)[0].Config.Host = "https://emby.example/emby?api_key=hidden" }},

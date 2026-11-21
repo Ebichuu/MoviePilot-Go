@@ -1,7 +1,10 @@
 package httpapi
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
+	"io"
 	"net/http"
 	"os"
 	"path"
@@ -51,12 +54,14 @@ func (d Dependencies) manualTransferHistory(w http.ResponseWriter, r *http.Reque
 
 // manualTransfer 对应 V2 `POST /transfer/manual`：把指定的一个文件按目标路径整理，
 // 本地存储支持 copy/move/hardlink/symlink（不可变计划 + SHA-256 校验）、可选刮削与刷新媒体库；
-// 远程存储沿用 storage.Provider.Rename，成功与失败均写入整理历史。
+// 支持跨存储（local/smb/alipan/u115/alist）流式搬运与实时进度上报；
+// 同远端存储沿用 storage.Provider.Rename，成功与失败均写入整理历史。
 func (d Dependencies) manualTransfer(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		SourcePath         string `json:"source_path"`
 		TargetPath         string `json:"target_path"`
 		Storage            string `json:"storage"`
+		TargetStorage      string `json:"target_storage"`
 		TransferType       string `json:"transfer_type"`
 		Scrape             bool   `json:"scrape"`
 		RefreshMediaServer bool   `json:"refresh_mediaserver"`
@@ -77,66 +82,85 @@ func (d Dependencies) manualTransfer(w http.ResponseWriter, r *http.Request) {
 	if storageName == "" {
 		storageName = "local"
 	}
+	targetStorage := strings.TrimSpace(body.TargetStorage)
+	if targetStorage == "" {
+		targetStorage = storageName
+	}
 	modeStr := strings.ToLower(strings.TrimSpace(body.TransferType))
 	if modeStr == "" {
 		modeStr = "move"
 	}
 
-	// 本地存储且显式指定 copy/hardlink/symlink（或未配 provider 但本地文件存在）时走不可变 organizer。
-	useLocalOrganizer := false
-	var orgMode organizer.Mode
-	if strings.EqualFold(storageName, "local") {
-		if parsedMode, ok := parseManualTransferMode(modeStr); ok {
-			orgMode = parsedMode
-			if info, statErr := os.Stat(source); statErr == nil && info.Mode().IsRegular() {
-				if modeStr != "move" || d.storageProvider() == nil {
-					useLocalOrganizer = true
+	if !strings.EqualFold(storageName, targetStorage) {
+		if err := d.executeCrossStorageTransfer(r.Context(), storageName, targetStorage, source, target, modeStr); err != nil {
+			d.recordManualTransferFailure(r, source, target, modeStr, err.Error())
+			writeJSON(w, http.StatusOK, Response{Success: false, Message: "跨存储整理失败：" + err.Error()})
+			return
+		}
+	} else {
+		// 本地存储且显式指定 copy/hardlink/symlink（或未配 provider 但本地文件存在）时走不可变 organizer。
+		useLocalOrganizer := false
+		var orgMode organizer.Mode
+		if strings.EqualFold(storageName, "local") {
+			if parsedMode, ok := parseManualTransferMode(modeStr); ok {
+				orgMode = parsedMode
+				if info, statErr := os.Stat(source); statErr == nil && info.Mode().IsRegular() {
+					if modeStr != "move" || d.storageProvider() == nil {
+						useLocalOrganizer = true
+					}
 				}
 			}
 		}
-	}
 
-	if useLocalOrganizer {
-		size, sum, fpErr := organizer.FingerprintFile(r.Context(), source)
-		if fpErr != nil {
-			d.recordManualTransferFailure(r, source, target, string(orgMode), fpErr.Error())
-			writeJSON(w, http.StatusOK, Response{Success: false, Message: "整理失败：" + fpErr.Error()})
-			return
-		}
-		plan, planErr := organizer.BuildPlan(filepath.Dir(target), []organizer.Operation{{
-			Source:         source,
-			Target:         target,
-			Mode:           orgMode,
-			ExpectedSize:   size,
-			ExpectedSHA256: sum,
-		}})
-		if planErr != nil {
-			d.recordManualTransferFailure(r, source, target, string(orgMode), planErr.Error())
-			writeJSON(w, http.StatusOK, Response{Success: false, Message: "整理失败：" + planErr.Error()})
-			return
-		}
-		if execErr := organizer.ExecuteWithinSourceRoot(r.Context(), filepath.Dir(source), plan); execErr != nil {
-			d.recordManualTransferFailure(r, source, target, string(orgMode), execErr.Error())
-			writeJSON(w, http.StatusOK, Response{Success: false, Message: "整理失败：" + execErr.Error()})
-			return
-		}
-		modeStr = string(orgMode)
-	} else {
-		provider := d.storageProvider()
-		if provider == nil {
-			writeJSON(w, http.StatusOK, Response{Success: false, Message: "未配置存储，无法手动整理"})
-			return
-		}
-		done, err := provider.Rename(r.Context(), storageName, source, target, false)
-		if err != nil {
-			d.recordManualTransferFailure(r, source, target, modeStr, err.Error())
-			writeJSON(w, http.StatusOK, Response{Success: false, Message: "整理失败：" + err.Error()})
-			return
-		}
-		if !done {
-			d.recordManualTransferFailure(r, source, target, modeStr, "存储未执行该操作")
-			writeJSON(w, http.StatusOK, Response{Success: false, Message: "整理失败：存储未执行该操作"})
-			return
+		if useLocalOrganizer {
+			size, sum, fpErr := organizer.FingerprintFile(r.Context(), source)
+			if fpErr != nil {
+				d.recordManualTransferFailure(r, source, target, string(orgMode), fpErr.Error())
+				writeJSON(w, http.StatusOK, Response{Success: false, Message: "整理失败：" + fpErr.Error()})
+				return
+			}
+			plan, planErr := organizer.BuildPlan(filepath.Dir(target), []organizer.Operation{{
+				Source:         source,
+				Target:         target,
+				Mode:           orgMode,
+				ExpectedSize:   size,
+				ExpectedSHA256: sum,
+			}})
+			if planErr != nil {
+				d.recordManualTransferFailure(r, source, target, string(orgMode), planErr.Error())
+				writeJSON(w, http.StatusOK, Response{Success: false, Message: "整理失败：" + planErr.Error()})
+				return
+			}
+			taskCtx, cancel := context.WithCancel(r.Context())
+			taskID := d.TransferTracker.Start(source, target, storageName, targetStorage, string(orgMode), size, cancel)
+			defer func() {
+				cancel()
+				d.TransferTracker.Finish(taskID)
+			}()
+			if execErr := organizer.ExecuteWithinSourceRoot(taskCtx, filepath.Dir(source), plan); execErr != nil {
+				d.recordManualTransferFailure(r, source, target, string(orgMode), execErr.Error())
+				writeJSON(w, http.StatusOK, Response{Success: false, Message: "整理失败：" + execErr.Error()})
+				return
+			}
+			d.TransferTracker.UpdateBytes(taskID, size)
+			modeStr = string(orgMode)
+		} else {
+			provider := d.storageProvider()
+			if provider == nil {
+				writeJSON(w, http.StatusOK, Response{Success: false, Message: "未配置存储，无法手动整理"})
+				return
+			}
+			done, err := provider.Rename(r.Context(), storageName, source, target, false)
+			if err != nil {
+				d.recordManualTransferFailure(r, source, target, modeStr, err.Error())
+				writeJSON(w, http.StatusOK, Response{Success: false, Message: "整理失败：" + err.Error()})
+				return
+			}
+			if !done {
+				d.recordManualTransferFailure(r, source, target, modeStr, "存储未执行该操作")
+				writeJSON(w, http.StatusOK, Response{Success: false, Message: "整理失败：存储未执行该操作"})
+				return
+			}
 		}
 	}
 
@@ -147,7 +171,7 @@ func (d Dependencies) manualTransfer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scraped := false
-	if body.Scrape && d.Scraper != nil && strings.EqualFold(storageName, "local") {
+	if body.Scrape && d.Scraper != nil && strings.EqualFold(targetStorage, "local") {
 		if _, _, err := d.scrapeLocalPath(r.Context(), target, false, body.MediaType, body.TMDBID); err != nil {
 			if d.Logger != nil {
 				d.Logger.Warn("手动整理后刮削失败", "target", target, "error", err)
@@ -174,12 +198,81 @@ func (d Dependencies) manualTransfer(w http.ResponseWriter, r *http.Request) {
 		"data": map[string]any{
 			"source_path":         source,
 			"target_path":         target,
+			"storage":             storageName,
+			"target_storage":      targetStorage,
 			"mode":                modeStr,
 			"scraped":             scraped,
 			"refreshed":           refreshed,
 			"refresh_mediaserver": refreshed,
 		},
 	})
+}
+
+func (d Dependencies) executeCrossStorageTransfer(
+	ctx context.Context,
+	srcStorage, dstStorage, source, target, mode string,
+) error {
+	provider := d.storageProvider()
+	if provider == nil {
+		return errors.New("未配置存储提供方")
+	}
+	opener, hasOpener := provider.(storage.FileOpener)
+	writer, hasWriter := provider.(storage.FileWriter)
+	if !hasOpener || !hasWriter {
+		return errors.New("当前存储注册表不支持跨存储流式读写")
+	}
+
+	taskCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	var (
+		rc         io.ReadCloser
+		totalBytes int64 = -1
+		err        error
+	)
+	rc, _, err = opener.Open(taskCtx, srcStorage, source)
+	if err != nil && strings.EqualFold(srcStorage, "local") {
+		if f, openErr := os.Open(source); openErr == nil {
+			if info, statErr := f.Stat(); statErr == nil && info.Mode().IsRegular() {
+				rc = f
+				totalBytes = info.Size()
+				err = nil
+			} else {
+				_ = f.Close()
+			}
+		}
+	}
+	if err != nil {
+		return err
+	}
+	defer func() { _ = rc.Close() }()
+
+	if totalBytes < 0 {
+		if stater, ok := rc.(interface{ Stat() (os.FileInfo, error) }); ok {
+			if info, statErr := stater.Stat(); statErr == nil {
+				totalBytes = info.Size()
+			}
+		}
+	}
+
+	taskID := d.TransferTracker.Start(source, target, srcStorage, dstStorage, mode, totalBytes, cancel)
+	defer d.TransferTracker.Finish(taskID)
+
+	stream := io.Reader(rc)
+	if d.TransferTracker != nil {
+		stream = &progressReader{reader: rc, tracker: d.TransferTracker, taskID: taskID}
+	}
+
+	if err := writer.Write(taskCtx, dstStorage, target, stream, totalBytes); err != nil {
+		return err
+	}
+	if strings.EqualFold(mode, "move") {
+		_ = rc.Close()
+		if _, delErr := provider.Delete(taskCtx, srcStorage, source); delErr != nil && strings.EqualFold(srcStorage, "local") {
+			_ = os.Remove(source)
+		}
+	}
+	return nil
 }
 
 func (d Dependencies) recordManualTransferFailure(r *http.Request, source, target, mode, errMsg string) {

@@ -120,6 +120,33 @@ func (f *fakeSMBFS) Open(name string) (io.ReadCloser, error) {
 	return io.NopCloser(bytes.NewReader(data)), nil
 }
 
+type fakeSMBWriteFile struct {
+	fs   *fakeSMBFS
+	path string
+	buf  bytes.Buffer
+}
+
+func (w *fakeSMBWriteFile) Write(p []byte) (int, error) {
+	return w.buf.Write(p)
+}
+
+func (w *fakeSMBWriteFile) Close() error {
+	data := append([]byte(nil), w.buf.Bytes()...)
+	w.fs.files[w.path] = data
+	w.fs.entries[w.path] = fakeSMBInfo{
+		name:    path.Base(w.path),
+		size:    int64(len(data)),
+		isDir:   false,
+		modTime: time.Now(),
+	}
+	return nil
+}
+
+func (f *fakeSMBFS) Create(name string) (io.WriteCloser, error) {
+	clean := strings.Trim(name, "/")
+	return &fakeSMBWriteFile{fs: f, path: clean}, nil
+}
+
 func (f *fakeSMBFS) Statfs(string) (uint64, uint64, error) {
 	return f.total, f.avail, nil
 }

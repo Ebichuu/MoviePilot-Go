@@ -124,6 +124,19 @@ func (r *ProviderRegistry) Open(ctx context.Context, storageName, requested stri
 	return opener.Open(ctx, storageName, requested)
 }
 
+// Write 转发到支持写入/上传的存储实现。
+func (r *ProviderRegistry) Write(ctx context.Context, storageName, requested string, reader io.Reader, size int64) error {
+	provider, err := r.lookup(storageName)
+	if err != nil {
+		return err
+	}
+	writer, ok := provider.(FileWriter)
+	if !ok {
+		return ErrUnsupportedStorage
+	}
+	return writer.Write(ctx, storageName, requested, reader, size)
+}
+
 // QRCode 转发到支持登录的存储实现。
 func (r *ProviderRegistry) QRCode(ctx context.Context, storageName string) (any, string, error) {
 	provider, err := r.lookup(storageName)
@@ -189,4 +202,5 @@ func (r *ProviderRegistry) ResetConfig(ctx context.Context, storageName string) 
 
 var _ Provider = (*ProviderRegistry)(nil)
 var _ FileOpener = (*ProviderRegistry)(nil)
+var _ FileWriter = (*ProviderRegistry)(nil)
 var _ AuthManager = (*ProviderRegistry)(nil)

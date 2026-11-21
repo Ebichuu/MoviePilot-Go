@@ -44,6 +44,7 @@ type smbFS interface {
 	RemoveAll(name string) error
 	Rename(oldpath, newpath string) error
 	Open(name string) (io.ReadCloser, error)
+	Create(name string) (io.WriteCloser, error)
 	Statfs(name string) (total uint64, available uint64, err error)
 	Close() error
 }
@@ -562,6 +563,10 @@ func (s *realSMBShare) Rename(oldpath, newpath string) error {
 
 func (s *realSMBShare) Open(name string) (io.ReadCloser, error) {
 	return s.share.Open(name)
+}
+
+func (s *realSMBShare) Create(name string) (io.WriteCloser, error) {
+	return s.share.Create(name)
 }
 
 func (s *realSMBShare) Statfs(name string) (uint64, uint64, error) {

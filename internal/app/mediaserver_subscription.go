@@ -90,7 +90,7 @@ func (r *mediaServerRuntime) cachedMovieItemID(ctx context.Context, tmdbID, titl
 
 func findEmbyMovie(
 	ctx context.Context,
-	client *emby.Client,
+	client mediaServerClient,
 	title string,
 	year string,
 	tmdbID string,
@@ -164,7 +164,7 @@ func (r *mediaServerRuntime) FindExistingEpisodes(
 
 func findEmbySeries(
 	ctx context.Context,
-	client *emby.Client,
+	client mediaServerClient,
 	title string,
 	year string,
 	tmdbID string,
@@ -200,7 +200,7 @@ func findEmbySeries(
 
 func listEmbySeriesEpisodes(
 	ctx context.Context,
-	client *emby.Client,
+	client mediaServerClient,
 	seriesID string,
 ) ([]subscription.Episode, error) {
 	found := make(map[subscription.Episode]struct{})

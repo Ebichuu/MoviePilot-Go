@@ -166,7 +166,7 @@ func TestSetMediaServersSettingValidationAndSaveErrors(t *testing.T) {
 		},
 		{
 			name: "非法类型", store: &errorMediaServerStore{},
-			body:   `[{"name":"home","type":"plex"}]`,
+			body:   `[{"name":"home","type":"unknown"}]`,
 			status: http.StatusBadRequest, substr: "媒体服务器设置无效",
 		},
 		{

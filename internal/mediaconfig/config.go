@@ -38,12 +38,21 @@ type Server struct {
 	hadID         bool          `json:"-"`
 }
 
-// Config 是 Emby 连接所需的服务器配置。
+// Config 是 Emby / Jellyfin / Plex 连接所需的服务器配置。
 type Config struct {
 	Host     string `json:"host"`
 	PlayHost string `json:"play_host"`
 	Username string `json:"username"`
 	APIKey   string `json:"apikey"`
+	Token    string `json:"token,omitempty"`
+}
+
+// EffectiveToken 返回用于认证的密钥（Plex 可填 token 或 apikey，Emby/Jellyfin 使用 apikey）。
+func (c Config) EffectiveToken() string {
+	if token := strings.TrimSpace(c.Token); token != "" {
+		return token
+	}
+	return strings.TrimSpace(c.APIKey)
 }
 
 // Snapshot 是可原子替换的完整规范化媒体服务器快照。
@@ -123,7 +132,7 @@ func Normalize(servers []Server) (Snapshot, bool, error) {
 }
 
 func isSupportedServerType(serverType string) bool {
-	return serverType == "emby" || serverType == "jellyfin"
+	return serverType == "emby" || serverType == "jellyfin" || serverType == "plex"
 }
 
 func normalizeServer(server *Server, seenIDs, seenNames map[string]struct{}) (bool, error) {
@@ -133,7 +142,7 @@ func normalizeServer(server *Server, seenIDs, seenNames map[string]struct{}) (bo
 	}
 	serverType := strings.ToLower(strings.TrimSpace(server.Type))
 	if !isSupportedServerType(serverType) {
-		return false, invalid("媒体服务器类型仅支持 emby、jellyfin")
+		return false, invalid("媒体服务器类型仅支持 emby、jellyfin、plex")
 	}
 	if server.Type != serverType {
 		server.Type = serverType
@@ -212,10 +221,10 @@ func Validate(servers []Server) error {
 			continue
 		}
 		if server.Config.Host == "" {
-			return invalid("已启用的 Emby 服务器缺少 host")
+			return invalid("已启用的媒体服务器缺少 host")
 		}
-		if server.Config.APIKey == "" {
-			return invalid("已启用的 Emby 服务器缺少 apikey")
+		if server.Config.EffectiveToken() == "" {
+			return invalid("已启用的媒体服务器缺少 apikey 或 token")
 		}
 	}
 	return nil
@@ -263,15 +272,19 @@ func MergeSecrets(incoming, existing []Server) ([]Server, error) {
 		if strings.TrimSpace(server.Config.APIKey) == "" && previous != nil {
 			server.Config.APIKey = previous.Config.APIKey
 		}
+		if strings.TrimSpace(server.Config.Token) == "" && previous != nil {
+			server.Config.Token = previous.Config.Token
+		}
 	}
 	return merged, nil
 }
 
-// RedactSecrets 返回 API 可安全输出的独立快照，并清空所有 API Key。
+// RedactSecrets 返回 API 可安全输出的独立快照，并清空所有 API Key 与 Token。
 func RedactSecrets(snapshot Snapshot) Snapshot {
 	redacted := snapshot.Clone()
 	for index := range redacted.Servers {
 		redacted.Servers[index].Config.APIKey = ""
+		redacted.Servers[index].Config.Token = ""
 	}
 	return redacted
 }
@@ -306,7 +319,7 @@ func normalizeConfig(config Config) (Config, bool, error) {
 	normalized := config.Clone()
 	changed := false
 
-	for _, value := range []*string{&normalized.Username, &normalized.APIKey} {
+	for _, value := range []*string{&normalized.Username, &normalized.APIKey, &normalized.Token} {
 		trimmed := strings.TrimSpace(*value)
 		if trimmed != *value {
 			*value = trimmed
@@ -316,7 +329,7 @@ func normalizeConfig(config Config) (Config, bool, error) {
 			return Config{}, false, invalid("媒体服务器认证字段无效")
 		}
 	}
-	if len(normalized.APIKey) > maxMediaServerAPIKeyBytes {
+	if len(normalized.APIKey) > maxMediaServerAPIKeyBytes || len(normalized.Token) > maxMediaServerAPIKeyBytes {
 		return Config{}, false, invalid("媒体服务器 API Key 过长")
 	}
 

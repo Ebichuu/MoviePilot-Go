@@ -205,7 +205,7 @@ func TestDecodeMediaServersSnapshot(t *testing.T) {
 			wantChanged: true, wantRequired: "any", wantServerID: "any",
 		},
 		{name: "启用记录缺少密钥", value: json.RawMessage(`[{"name":"Emby","type":"emby","enabled":true,"config":{"host":"https://emby.example/emby"}}]`), wantErr: true},
-		{name: "非法类型", value: json.RawMessage(`[{"name":"Plex","type":"plex"}]`), wantErr: true},
+		{name: "非法类型", value: json.RawMessage(`[{"name":"Unknown","type":"unknown"}]`), wantErr: true},
 	}
 
 	for _, tt := range tests {

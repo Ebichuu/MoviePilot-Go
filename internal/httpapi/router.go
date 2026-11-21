@@ -103,6 +103,7 @@ type Dependencies struct {
 	MediaServerRefresher        MediaServerRefresher
 	TorrentCache                torrentCacheStore
 	Subtitle                    *subtitle.Coordinator
+	TransferTracker             *TransferTracker
 	// Plugins 是原生插件注册表；为 nil 表示本部署不启用插件体系，
 	// 此时插件路由返回空列表/明确失败，而不是 panic。
 	Plugins *pluginengine.Registry
@@ -142,6 +143,9 @@ type SubscriptionHistoryStore interface {
 
 // NewRouter 构建 V2 兼容 API、监控端点和静态前端路由。
 func NewRouter(deps Dependencies) http.Handler {
+	if deps.TransferTracker == nil {
+		deps.TransferTracker = NewTransferTracker()
+	}
 	registerer := prometheus.NewRegistry()
 	registerer.MustRegister(prometheus.NewGoCollector(), prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
 	registerPostgresPoolMetrics(registerer, deps.DB)

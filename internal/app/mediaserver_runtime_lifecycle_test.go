@@ -150,8 +150,8 @@ func TestBuildMediaServerRuntimeRejectsUnsupportedConfiguration(t *testing.T) {
 		want    string
 	}{
 		{
-			name:    "非 emby 类型",
-			servers: []mediaconfig.Server{{ID: mediaServerRuntimeTestID, Name: "Plex", Type: "plex", Enabled: true}},
+			name:    "不支持的类型",
+			servers: []mediaconfig.Server{{ID: mediaServerRuntimeTestID, Name: "Unknown", Type: "unknown", Enabled: true}},
 			want:    "媒体服务器类型当前不受支持",
 		},
 		{
@@ -239,7 +239,7 @@ func TestMediaServerRuntimeReloadSwapsOrKeepsEntries(t *testing.T) {
 
 	// 配置本身非法的重载同样保留旧条目。
 	store.set(mediaconfig.Snapshot{Servers: []mediaconfig.Server{{
-		ID: mediaServerRuntimeTestID, Name: "Broken", Type: "plex", Enabled: true,
+		ID: mediaServerRuntimeTestID, Name: "Broken", Type: "unknown", Enabled: true,
 	}}}, true, nil)
 	if err := runtime.Reload(t.Context(), store, time.Second, nil); err == nil {
 		t.Fatal("Reload(非法配置) error = nil")

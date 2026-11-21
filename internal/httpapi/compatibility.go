@@ -96,11 +96,11 @@ func (d Dependencies) registerProtectedCompatibility(router chi.Router) {
 	router.With(d.requireAdmin).Get("/dashboard/transfer", d.dashboardTransfer)
 	router.With(d.requireAdmin).Get("/dashboard/schedule/{job_id}/progress", dashboardScheduleProgress)
 
-	router.Get("/transfer/queue", transferQueueList)
+	router.Get("/transfer/queue", d.transferQueueList)
 	router.Get("/history/transfer", d.transferHistory)
 	router.Get("/history/download", d.downloadHistory)
-	router.Get("/transfer/now", transferNowList)
-	router.Delete("/transfer/queue", removeTransferQueueItem)
+	router.Get("/transfer/now", d.transferNowList)
+	router.Delete("/transfer/queue", d.removeTransferQueueItem)
 	// 插件：清单/安装/启停/配置走 Go 原生注册表；页面、看板、文件、历史、评分、
 	// 版本发布、克隆这些依赖 Python 插件运行时的接口继续诚实拒绝。
 	router.With(d.requireAdmin).Get("/plugin/{plugin_id}", d.getPlugin)
@@ -146,7 +146,7 @@ func (d Dependencies) registerProtectedCompatibility(router chi.Router) {
 	router.Post("/search/recommend", refusal("未配置 AI 模型，无法生成推荐"))
 	router.Get("/subscribe/popular", refusal("未接入插件市场，无法获取热门订阅"))
 	router.Get("/transfer/name", d.transferName)
-	router.Post("/transfer/episode-format/recommend", refusal("需要真实整季文件清单才能推荐集号格式"))
+	router.Post("/transfer/episode-format/recommend", d.recommendEpisodeFormat)
 	router.Post("/media/scrape/{storage}", d.scrapeMedia)
 	router.Get("/message/", refusal("未启用 AI Agent，无法提供该接口"))
 	router.Post("/message/", refusal("未启用 AI Agent，无法提供该接口"))
@@ -254,7 +254,7 @@ func (d Dependencies) registerProtectedCompatibility(router chi.Router) {
 	// 否则升级、迁移、出事回滚都没有退路。
 	router.With(d.requireAdmin).Get("/system/backup", d.systemBackup)
 	router.With(d.requireAdmin).Post("/system/restore", d.systemRestore)
-	router.With(d.requireAdmin).Get("/system/progress/{process_type}", systemProgress)
+	router.With(d.requireAdmin).Get("/system/progress/{process_type}", d.systemProgress)
 	router.With(d.requireAdmin).Get("/system/modulelist", systemModuleList)
 	router.With(d.requireAdmin).Get("/system/moduletest/{moduleid}", systemModuleTest)
 	router.With(d.requireAdmin).Get("/system/restart", systemRestart)

@@ -27,8 +27,8 @@
 - 订阅：电影/电视剧创建、编辑、重置、精准搜索、缺集与洗版、完成后状态收敛、Overseerr/Jellyseerr Webhook 自动订阅（`/api/v1/subscribe/seerr`）
 - 站点：8 个内置站点适配器 + 通用 **NexusPHP** 适配器 + **Torznab / Jackett / Prowlarr** 聚合协议，站点凭据用主密钥加密落库，支持种子缓存查询/刷新/删除/重新识别（`/api/v1/torrent/cache`）
 - 下载：qBittorrent / Transmission / rTorrent 提交、名称与大小接管、结果未知的幂等对账、进度查询
-- 整理：不可变计划 + 逐文件 CAS + SHA-256 校验，支持 V2 自定义 Jinja2 命名模板（`MOVIE_RENAME_FORMAT` / `TV_RENAME_FORMAT`）、本地目录监控（`monitor_type: "monitor"`）、手动刮削（`/api/v1/media/scrape/{storage}`）、手动多模式整理（`copy`/`move`/`hardlink`/`symlink`）与失败历史记录查询/清理
-- 媒体库：Emby / Jellyfin 入库确认、条目同步缓存、NFO 与图片刮削、刷新请求、Emby/Jellyfin/Plex Webhook 接收通知（`/api/v1/webhook/`）
+- 整理：不可变计划 + 逐文件 CAS + SHA-256 校验，支持 V2 自定义 Jinja2 命名模板（`MOVIE_RENAME_FORMAT` / `TV_RENAME_FORMAT`）、本地目录监控（`monitor_type: "monitor"`）、手动刮削（`/api/v1/media/scrape/{storage}`）、手动多模式与**跨存储流式整理**（Local / SMB / 阿里云盘 / 115 / Alist 互传）、实时整理队列/进度（`/transfer/queue`、`/transfer/now`、`/system/progress/{process_type}`）、整季集号格式推荐（`/transfer/episode-format/recommend`）与失败历史记录查询/清理
+- 媒体库：**Emby / Jellyfin / Plex** 入库确认、条目同步缓存、NFO 与图片刮削、刷新请求、播放链接生成、Emby/Jellyfin/Plex Webhook 接收通知（`/api/v1/webhook/`）
 - 通知：Telegram（含入站 Bot）、Discord、飞书、Slack、SynologyChat、VoceChat、QQ、企业微信应用、WebPush，支持 V2 默认模板、逐目标重试与漏投恢复
 - 存储与扩展：本地存储、Rclone、Alist、**SMB**（纯 Go `go-smb2`）、**阿里云盘**（PKCE 扫码登录 + Open API）、**115 网盘**（PKCE 扫码 / OAuth2 + Open API）；5 个 Go 原生内置插件（站点签到、自动备份、RSS 增强、订阅助手、媒体库同步）；CookieCloud 同步；MFA/OTP
 - 字幕：支持 **OpenSubtitles REST API v1** 与 **Assrt（伪射手）** 并发搜索（普通 + SSE 流式 `/api/v1/search/subtitle/...`）与安全下载/ZIP 自动解压（`/api/v1/download/subtitle`）
@@ -41,7 +41,7 @@
 
 - Python 插件运行时（V2 插件体系）与插件市场
 - 工作流引擎、Agent / LLM / MCP 相关能力
-- Plex 与其他下载器（aria2、Deluge）
+- 国产 NAS 影视墙（飞牛/绿联/极空间）、TheTVDB / Fanart.tv 与其他下载器（aria2、Deluge）
 - 企业微信 ClawBot、Passkey / WebAuthn
 - 完整洗版语义、部分站点辅助接口（如站点分类）仍返回 V2 兼容空状态
 
