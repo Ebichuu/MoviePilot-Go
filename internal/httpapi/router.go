@@ -97,6 +97,10 @@ type Dependencies struct {
 	Storage                     storage.Provider
 	Scheduler                   SchedulerRunner
 	LogBuffer                   LogReader
+	WebhookNotifier             WebhookNotifier
+	Scraper                     ManualScraper
+	MediaServerRefresher        MediaServerRefresher
+	TorrentCache                torrentCacheStore
 	// Plugins 是原生插件注册表；为 nil 表示本部署不启用插件体系，
 	// 此时插件路由返回空列表/明确失败，而不是 panic。
 	Plugins *pluginengine.Registry

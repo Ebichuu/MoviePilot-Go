@@ -560,9 +560,16 @@ func Run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
 	if buf := defaultLogBuffer.Load(); buf != nil {
 		logReader = buf
 	}
+	var manualScraper httpapi.ManualScraper
+	if scraperService != nil {
+		manualScraper = scraperService
+	}
 	handler := httpapi.NewRouter(httpapi.Dependencies{
 		Config: cfg, DB: db, Cache: redisCache, Store: store, Auth: authService, Logger: logger,
-		LogBuffer: logReader,
+		LogBuffer:            logReader,
+		WebhookNotifier:      webhookNotificationBridge{sender: notificationSender},
+		Scraper:              manualScraper,
+		MediaServerRefresher: mediaServerRuntime,
 		// 登录防爆破：账号与 IP 双维度锁定，阈值来自 MOVIEPILOT_LOGIN_* 配置。
 		LoginThrottle: httpapi.NewLoginThrottle(httpapi.LoginThrottleConfig{
 			MaxUserFailures: cfg.LoginMaxFailures,

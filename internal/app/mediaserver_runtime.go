@@ -520,3 +520,21 @@ func (r *mediaServerRuntime) EnabledServerNames() []string {
 	}
 	return names
 }
+
+// RefreshAllMediaServers 通知所有已启用的媒体服务器（Emby/Jellyfin）执行全库刷新。
+func (r *mediaServerRuntime) RefreshAllMediaServers(ctx context.Context) error {
+	if r == nil {
+		return nil
+	}
+	entries := r.entriesSnapshot("")
+	var errs []error
+	for _, entry := range entries {
+		if entry == nil || entry.client == nil {
+			continue
+		}
+		if err := entry.client.RefreshAll(ctx); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return errors.Join(errs...)
+}

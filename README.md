@@ -24,11 +24,11 @@
 
 **已实现（主链路闭环）**
 
-- 订阅：电影/电视剧创建、编辑、重置、精准搜索、缺集与洗版、完成后状态收敛
-- 站点：8 个内置站点适配器 + 通用 **NexusPHP** 适配器 + **Torznab / Jackett / Prowlarr** 聚合协议，站点凭据用主密钥加密落库
+- 订阅：电影/电视剧创建、编辑、重置、精准搜索、缺集与洗版、完成后状态收敛、Overseerr/Jellyseerr Webhook 自动订阅（`/api/v1/subscribe/seerr`）
+- 站点：8 个内置站点适配器 + 通用 **NexusPHP** 适配器 + **Torznab / Jackett / Prowlarr** 聚合协议，站点凭据用主密钥加密落库，支持种子缓存查询/刷新/删除/重新识别（`/api/v1/torrent/cache`）
 - 下载：qBittorrent / Transmission / rTorrent 提交、名称与大小接管、结果未知的幂等对账、进度查询
-- 整理：不可变计划 + 逐文件 CAS + SHA-256 校验，支持 V2 自定义 Jinja2 命名模板（`MOVIE_RENAME_FORMAT` / `TV_RENAME_FORMAT`）、本地目录监控（`monitor_type: "monitor"`）与失败历史记录查询/清理
-- 媒体库：Emby / Jellyfin 入库确认、条目同步缓存、NFO 与图片刮削、刷新请求
+- 整理：不可变计划 + 逐文件 CAS + SHA-256 校验，支持 V2 自定义 Jinja2 命名模板（`MOVIE_RENAME_FORMAT` / `TV_RENAME_FORMAT`）、本地目录监控（`monitor_type: "monitor"`）、手动刮削（`/api/v1/media/scrape/{storage}`）、手动多模式整理（`copy`/`move`/`hardlink`/`symlink`）与失败历史记录查询/清理
+- 媒体库：Emby / Jellyfin 入库确认、条目同步缓存、NFO 与图片刮削、刷新请求、Emby/Jellyfin/Plex Webhook 接收通知（`/api/v1/webhook/`）
 - 通知：Telegram（含入站 Bot）、Discord、飞书、Slack、SynologyChat、VoceChat、QQ、企业微信应用、WebPush，支持 V2 默认模板、逐目标重试与漏投恢复
 - 存储与扩展：本地存储、Rclone、Alist；5 个 Go 原生内置插件（站点签到、自动备份、RSS 增强、订阅助手、媒体库同步）；CookieCloud 同步；MFA/OTP
 - 元数据与发现：TMDB、豆瓣、Bangumi、AniList；发现/推荐页直接用这些来源

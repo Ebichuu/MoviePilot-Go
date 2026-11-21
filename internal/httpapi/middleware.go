@@ -237,6 +237,32 @@ func (d Dependencies) requireAPIToken(next http.Handler) http.Handler {
 	})
 }
 
+// requireAPITokenOrBearer 同时接受外部媒体服务器常用的 `?token=API_TOKEN`
+// 与已登录用户的 `Authorization: Bearer <jwt>`。
+func (d Dependencies) requireAPITokenOrBearer(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		expected := strings.TrimSpace(d.Config.APIToken)
+		provided := strings.TrimSpace(r.URL.Query().Get("token"))
+		if expected != "" && provided != "" &&
+			subtle.ConstantTimeCompare([]byte(provided), []byte(expected)) == 1 {
+			next.ServeHTTP(w, r)
+			return
+		}
+		if d.Auth != nil {
+			header := strings.TrimSpace(r.Header.Get("Authorization"))
+			parts := strings.Fields(header)
+			if len(parts) == 2 && strings.EqualFold(parts[0], "Bearer") {
+				if claims, err := d.Auth.VerifyAccessToken(parts[1]); err == nil {
+					ctx := context.WithValue(r.Context(), claimsContextKey, claims)
+					next.ServeHTTP(w, r.WithContext(ctx))
+					return
+				}
+			}
+		}
+		writeError(w, http.StatusForbidden, "API_TOKEN 校验失败")
+	})
+}
+
 func (d Dependencies) requireAdmin(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, ok := d.authorizedUser(r)
