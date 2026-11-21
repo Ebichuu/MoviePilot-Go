@@ -50,14 +50,27 @@ type MediaServerLibrary struct {
 	Locations  []string `json:"locations,omitempty"`
 	ItemID     string   `json:"item_id,omitempty"`
 	Hidden     bool     `json:"hidden,omitempty"`
+	ID         string   `json:"id,omitempty"`
+	ServerID   string   `json:"server_id,omitempty"`
+	ServerType string   `json:"server_type,omitempty"`
+	Path       []string `json:"path,omitempty"`
+	Image      string   `json:"image,omitempty"`
+	Link       string   `json:"link,omitempty"`
 }
 
 type MediaServerPlayItem struct {
-	ItemID     string `json:"item_id,omitempty"`
-	Title      string `json:"title,omitempty"`
-	URL        string `json:"url,omitempty"`
-	ServerID   string `json:"server_id,omitempty"`
-	ServerType string `json:"server_type,omitempty"`
+	ID                string   `json:"id,omitempty"`
+	ItemID            string   `json:"item_id,omitempty"`
+	ServerID          string   `json:"server_id,omitempty"`
+	Title             string   `json:"title,omitempty"`
+	Subtitle          string   `json:"subtitle,omitempty"`
+	Type              string   `json:"type,omitempty"`
+	Image             string   `json:"image,omitempty"`
+	Link              string   `json:"link,omitempty"`
+	URL               string   `json:"url,omitempty"`
+	Percent           *float64 `json:"percent,omitempty"`
+	BackdropImageTags []string `json:"BackdropImageTags,omitempty"`
+	ServerType        string   `json:"server_type,omitempty"`
 }
 
 type MediaServerLibrarySource interface {
@@ -292,7 +305,9 @@ func (d Dependencies) mediaServerLatest(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	count := mediaServerCount(r, 20, 100)
-	result, err := d.MediaServerLibraries.ListMediaServerLatest(r.Context(), r.URL.Query().Get("server"), count)
+	ctx, cancel := context.WithTimeout(r.Context(), mediaServerLibraryTimeout)
+	defer cancel()
+	result, err := d.MediaServerLibraries.ListMediaServerLatest(ctx, r.URL.Query().Get("server"), count)
 	if err != nil {
 		writeError(w, http.StatusBadGateway, "媒体服务器请求失败")
 		return
@@ -306,7 +321,9 @@ func (d Dependencies) mediaServerPlaying(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	count := mediaServerCount(r, 12, 100)
-	result, err := d.MediaServerLibraries.ListMediaServerPlaying(r.Context(), r.URL.Query().Get("server"), count)
+	ctx, cancel := context.WithTimeout(r.Context(), mediaServerLibraryTimeout)
+	defer cancel()
+	result, err := d.MediaServerLibraries.ListMediaServerPlaying(ctx, r.URL.Query().Get("server"), count)
 	if err != nil {
 		writeError(w, http.StatusBadGateway, "媒体服务器请求失败")
 		return

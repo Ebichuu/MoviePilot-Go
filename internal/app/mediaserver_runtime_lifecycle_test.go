@@ -496,10 +496,16 @@ func TestMediaServerRuntimeListLibraries(t *testing.T) {
 		{
 			Name: "电影", Server: setting.Name, Type: "emby", Collection: "movies",
 			Locations: []string{"/mnt/movies"}, ItemID: "lib-1",
+			ID: "lib-1", ServerType: "emby", Path: []string{"/mnt/movies"},
+			Image: server.URL + "/Items/lib-1/Images/Primary",
+			Link:  server.URL + "/web/index.html#!/videos?parentId=lib-1",
 		},
 		{
 			Name: "剧集", Server: setting.Name, Type: "emby", Collection: "tvshows",
 			Locations: []string{"/mnt/tv", "/mnt/tv2"}, ItemID: "lib-2",
+			ID: "lib-2", ServerType: "emby", Path: []string{"/mnt/tv", "/mnt/tv2"},
+			Image: server.URL + "/Items/lib-2/Images/Primary",
+			Link:  server.URL + "/web/index.html#!/videos?parentId=lib-2",
 		},
 	}
 	if !reflect.DeepEqual(got, want) {
@@ -554,7 +560,22 @@ func TestMediaServerRuntimeListLibrariesFailure(t *testing.T) {
 func TestMediaServerRuntimeLatestAndPlayingAreEmpty(t *testing.T) {
 	t.Parallel()
 
-	runtime, _ := newMediaServerRuntimeWithEmbyServer(t, "https://emby.example.test", nil)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/Users":
+			_, _ = w.Write([]byte(`[{"Id":"u1","Name":"admin","Policy":{"IsAdministrator":true}}]`))
+		case "/Users/u1/Items/Latest":
+			_, _ = w.Write([]byte(`[]`))
+		case "/Users/u1/Items/Resume":
+			_, _ = w.Write([]byte(`{"Items":[]}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	t.Cleanup(server.Close)
+
+	runtime, _ := newMediaServerRuntimeWithEmbyServer(t, server.URL, nil)
 	latest, err := runtime.ListMediaServerLatest(t.Context(), "", 10)
 	if err != nil || latest == nil || len(latest) != 0 {
 		t.Fatalf("ListMediaServerLatest() = %#v %v", latest, err)
@@ -562,10 +583,6 @@ func TestMediaServerRuntimeLatestAndPlayingAreEmpty(t *testing.T) {
 	playing, err := runtime.ListMediaServerPlaying(t.Context(), "", 10)
 	if err != nil || playing == nil || len(playing) != 0 {
 		t.Fatalf("ListMediaServerPlaying() = %#v %v", playing, err)
-	}
-	// 「最近添加/正在播放」尚未接入时返回空列表，不能编造内容。
-	for _, item := range append(latest, playing...) {
-		t.Fatalf("不应有播放条目: %#v", item)
 	}
 }
 

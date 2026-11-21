@@ -321,7 +321,7 @@ func (r *mediaServerRuntime) PlayMediaServerItem(
 func (r *mediaServerRuntime) ListMediaServerLibraries(
 	ctx context.Context,
 	selector string,
-	_ bool,
+	hidden bool,
 ) ([]httpapi.MediaServerLibrary, error) {
 	entries := r.entriesSnapshot(selector)
 	result := make([]httpapi.MediaServerLibrary, 0)
@@ -334,22 +334,31 @@ func (r *mediaServerRuntime) ListMediaServerLibraries(
 			}
 			return nil, errors.New("媒体服务器请求失败")
 		}
+		hp, hasHomepage := entry.client.(embyHomepageClient)
 		for _, library := range libraries {
-			result = append(result, httpapi.MediaServerLibrary{
-				Name: library.Name, Server: entry.setting.Name, Type: entry.setting.Type,
-				Collection: library.CollectionType, Locations: append([]string(nil), library.Locations...), ItemID: library.ItemID,
-			})
+			if hidden && !libraryAllowedBySyncConfig(entry.setting.SyncLibraries, library.ItemID) {
+				continue
+			}
+			locs := append([]string(nil), library.Locations...)
+			item := httpapi.MediaServerLibrary{
+				ID:         library.ItemID,
+				ItemID:     library.ItemID,
+				Name:       library.Name,
+				Server:     entry.setting.Name,
+				Type:       entry.setting.Type,
+				ServerType: entry.setting.Type,
+				Collection: library.CollectionType,
+				Path:       locs,
+				Locations:  locs,
+			}
+			if hasHomepage && library.ItemID != "" {
+				item.Image = hp.PrimaryImageURL(library.ItemID)
+				item.Link = hp.LibraryURL(library.ItemID, "")
+			}
+			result = append(result, item)
 		}
 	}
 	return result, nil
-}
-
-func (*mediaServerRuntime) ListMediaServerLatest(context.Context, string, int) ([]httpapi.MediaServerPlayItem, error) {
-	return []httpapi.MediaServerPlayItem{}, nil
-}
-
-func (*mediaServerRuntime) ListMediaServerPlaying(context.Context, string, int) ([]httpapi.MediaServerPlayItem, error) {
-	return []httpapi.MediaServerPlayItem{}, nil
 }
 
 func (r *mediaServerRuntime) ExistingEpisodes(ctx context.Context, input httpapi.RemoteMediaInfo) (map[int][]int, error) {
